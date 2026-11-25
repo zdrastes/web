@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'sha256-T/2zRQQicoHy9WctBx1b86X3H/mx4DfKKXw/rpophxY='; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'sha256-BGQnVdt55+LnRcDM0B1boTpT5Ualb5kEa92hXeJtdZQ='; base-uri 'none'; form-action 'none'">
   <title>Рабочие графики · Портал L2</title>
   <link rel="stylesheet" href="css/portal.css">
   <style>
@@ -90,6 +90,27 @@ header.shell{min-height:64px;border-color:#244c4930}.logo .mark{background:#153f
 thead th,thead th:first-child{background:#eaf3ef}.person{z-index:1}
 .filters{display:flex;flex-wrap:wrap;gap:9px;padding:10px;margin-bottom:13px;border-radius:12px;background:#eef5f2}.filters label{display:grid;gap:5px;font-size:13px;color:#345e54}.filters select,.filters input{font-size:14px}
 @media(max-width:680px){.hero{grid-template-columns:1fr}.hero h1 br{display:none}.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+:root{background:#f1f2f8;color:#21243a}
+body{background:radial-gradient(ellipse at 78% 0%,#eae4fb,transparent 48%),#f1f2f8}
+header.shell{border-color:#dedcec}.logo .mark{background:#533ba0}.top-note,.schedule .back{color:#5d5474}
+.welcome{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:7px 0 24px}
+.welcome p{margin:0 0 7px;color:#625775}.schedule .welcome h1{margin:0;font-size:clamp(30px,5vw,53px);letter-spacing:-.055em;line-height:1.04}
+.dashboard{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(0,.95fr) minmax(0,1fr);gap:14px;margin-bottom:30px}
+.dash-card{min-width:0;background:#fff;border:1px solid #e9e6f1;border-radius:22px;padding:18px;box-shadow:0 10px 26px #3927580b}
+.dash-card h2{margin:0;font-size:19px;letter-spacing:-.025em}.card-head{display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:13px}
+.card-head p{color:#625775;margin:4px 0 0;font-size:13px}.card-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:12px;background:#ece5fc;color:#553893;font-size:21px;flex:none}
+.agenda{grid-row:span 2;display:flex;flex-direction:column}.agenda-nav{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px}.agenda-nav strong{margin:0 3px;font-size:14px}.agenda-nav button{padding:5px 8px;font-size:13px}
+#agenda-events{margin-bottom:12px;flex:1}.agenda-item{display:grid;grid-template-columns:70px 1fr;gap:8px;border-left:3px solid #aa8de5;border-radius:8px;background:#f5f0ff;padding:9px;margin-bottom:6px;font-size:14px}
+.agenda-item span{color:#574c6b}.agenda-empty{color:#625775;font-size:14px}
+.dashboard-link{display:inline-flex;align-items:center;text-decoration:none;font-size:14px;font-weight:650;color:#4c3584;padding:8px 11px;border-radius:10px;background:#eae3f8;width:fit-content}
+.dashboard-link:hover{background:#e1d5f4}
+.dash-card.next{background:linear-gradient(140deg,#e1d8fb,#fbecf1);color:#31264d}.dash-card.next p{color:#57466c}.dash-card.next button{background:#fff;border-color:#dbcee9}
+.shortcuts{grid-column:2}.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.quick-grid button{text-align:left;font-size:13px;background:#f1edf9;border-color:#e8e0f1}.quick-grid span{float:right}.quick-grid button:hover{background:#e7daf7}
+.news{grid-column:3;grid-row:1/span 2}.news details{background:#f7f4fa;padding:10px;border-radius:10px;margin-bottom:7px}.news summary{cursor:pointer;font-weight:650;font-size:14px}.news details p{font-size:13px;line-height:1.45;color:#625775;margin:7px 0 0}
+#work-schedules{scroll-margin-top:12px;margin:0 0 11px}.tabs{background:#e7e1f2}.tabs button[aria-pressed=true],.primary{background:#523989;border-color:#523989}
+@media(max-width:900px){.dashboard{grid-template-columns:1fr 1fr}.agenda,.news{grid-row:auto;grid-column:auto}.shortcuts{grid-column:auto}}
+@media(max-width:600px){.dashboard{grid-template-columns:1fr}.welcome{align-items:start;flex-direction:column}.dashboard-link{font-size:13px}}
 </style>
 </head>
 <body>
@@ -99,7 +120,43 @@ thead th,thead th:first-child{background:#eaf3ef}.person{z-index:1}
   </header>
   <main class="shell schedule">
     <a class="back" href="./">← На главную</a>
-    <div class="hero"><div><h1>Пространство<br> сотрудника</h1><p>Смены, отпуска и отчёты команды</p></div><aside class="next"><h2>Ближайшая смена</h2><p id="next-person"></p><strong id="next-date"></strong><p id="next-time"></p><button type="button" id="open-next">Открыть смену ↗</button></aside></div>
+    <section class="welcome" aria-labelledby="welcome-title">
+      <div><p>Пространство сотрудника</p><h1 id="welcome-title"></h1></div>
+      <a class="dashboard-link" href="#work-schedules">Открыть графики ↓</a>
+    </section>
+    <div class="dashboard">
+      <section class="dash-card agenda" aria-labelledby="agenda-title">
+        <div class="card-head"><div><h2 id="agenda-title">Мои события</h2><p>Календарь Outlook · демо</p></div><span class="card-icon" aria-hidden="true">▦</span></div>
+        <div class="agenda-nav" aria-label="Дата событий">
+          <button id="agenda-prev" type="button" aria-label="Предыдущий день">←</button>
+          <strong id="agenda-date" aria-live="polite"></strong>
+          <button id="agenda-next" type="button" aria-label="Следующий день">→</button>
+          <button id="agenda-today" type="button">Сегодня</button>
+        </div>
+        <div id="agenda-events"></div>
+        <a class="dashboard-link" href="https://outlook.office.com/calendar/" target="_blank" rel="noopener noreferrer">Открыть Outlook ↗</a>
+      </section>
+      <section class="dash-card next" aria-labelledby="next-title">
+        <div class="card-head"><h2 id="next-title">Ближайшая смена</h2><span class="card-icon" aria-hidden="true">◷</span></div>
+        <p id="next-person"></p><strong id="next-date"></strong><p id="next-time"></p>
+        <button type="button" id="open-next">Открыть смену ↗</button>
+      </section>
+      <section class="dash-card shortcuts" aria-labelledby="quick-title">
+        <h2 id="quick-title">Рабочие графики</h2>
+        <div class="quick-grid">
+          <button type="button" data-open-schedule="personal">Мой график <span aria-hidden="true">↗</span></button>
+          <button type="button" data-open-schedule="team">График команды <span aria-hidden="true">↗</span></button>
+          <button type="button" data-open-schedule="vacation">Отпуска <span aria-hidden="true">↗</span></button>
+          <button type="button" data-open-schedule="report">Отчёты <span aria-hidden="true">↗</span></button>
+        </div>
+      </section>
+      <section class="dash-card news" aria-labelledby="news-title">
+        <div class="card-head"><div><h2 id="news-title">Новости команды</h2><p>Объявления демопортала</p></div><span class="card-icon" aria-hidden="true">✷</span></div>
+        <details><summary>Графики собраны в одном месте</summary><p>Смены, отпуска и даты сдачи отчётов доступны в рабочих графиках.</p></details>
+        <details><summary>Как договориться о подмене</summary><p>Нажмите на смену и выберите коллегу, свободного в этот день.</p></details>
+      </section>
+    </div>
+    <h2 id="work-schedules" tabindex="-1">Рабочие графики</h2>
     <div class="tabs" role="group" aria-label="Вид графика">
       <button id="personal-tab" type="button" aria-pressed="true" aria-controls="personal-view">Мой график</button>
       <button id="team-tab" type="button" aria-pressed="false" aria-controls="team-view">График команды</button>
@@ -458,6 +515,37 @@ thead th,thead th:first-child{background:#eaf3ef}.person{z-index:1}
   $('previous-week').addEventListener('click', () => { view.week -= 1; render(); });
   $('next-week').addEventListener('click', () => { view.week += 1; render(); });
   $('this-week').addEventListener('click', () => { view.week = 0; render(); });
+  const agendaSamples = {
+    0: [['10:00', 'Короткая встреча команды L2'], ['15:30', 'Разбор обращений за неделю']],
+    1: [['11:00', 'Планирование работы команды']],
+  };
+  let agendaOffset = 0;
+  const readableDay = new Intl.DateTimeFormat('ru-RU', {
+    weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC',
+  });
+  $('welcome-title').textContent = 'Сегодня ' + readableDay.format(today);
+  function renderAgenda() {
+    $('agenda-date').textContent = dateNumber.format(parse(relative(agendaOffset)));
+    $('agenda-today').disabled = agendaOffset === 0;
+    const samples = agendaSamples[agendaOffset] || [];
+    $('agenda-events').replaceChildren(...samples.map(([time, title]) => {
+      const item = element('div', 'agenda-item');
+      item.append(element('span', '', time + ' МСК'), element('strong', '', title));
+      return item;
+    }));
+    if (!samples.length) $('agenda-events').append(element('p', 'agenda-empty', 'На этот день событий нет.'));
+  }
+  $('agenda-prev').addEventListener('click', () => { agendaOffset -= 1; renderAgenda(); });
+  $('agenda-next').addEventListener('click', () => { agendaOffset += 1; renderAgenda(); });
+  $('agenda-today').addEventListener('click', () => { agendaOffset = 0; renderAgenda(); });
+  document.querySelectorAll('[data-open-schedule]').forEach(button => {
+    button.addEventListener('click', () => {
+      view.page = button.dataset.openSchedule;
+      render();
+      $('work-schedules').focus();
+    });
+  });
+  renderAgenda();
   render();
 })();</script>
 </body>
