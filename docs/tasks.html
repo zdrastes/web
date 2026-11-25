@@ -120,9 +120,10 @@
 #portal-help summary{cursor:pointer;font-weight:650}
 #portal-help p{font-size:13px;line-height:1.5;margin:7px 0 0}
 #tasks-signin section{max-width:490px}
-#tasks-login{margin-top:12px}
+
 #ld-user,#ld-logout{display:none!important}
 </style>
+  <link rel="stylesheet" href="css/portal-signin.css">
 </head>
 <body>
   <header class="shell"><a href="./"><span class="mark">L2</span> Портал L2</a><div id="portal-profile-controls" hidden>
@@ -134,13 +135,13 @@
     <button id="portal-profile-logout" type="button">Выйти</button>
   </section>
 </div></header>
-  <main class="shell" id="tasks-signin" hidden>
-    <section class="card" aria-labelledby="tasks-signin-title">
+  <section class="portal-signin" id="tasks-signin" hidden aria-labelledby="tasks-signin-title">
+    <div class="portal-signin-card">
       <h1 id="tasks-signin-title">Вход</h1>
-      <p class="muted">Задачи доступны в деморежиме.</p>
+      <p>Демо работает на синтетических данных.</p>
       <button type="button" id="tasks-login">Войти в демо-режиме</button>
-    </section>
-  </main>
+    </div>
+  </section>
   <main class="shell" id="tasks-workspace">
     <a class="back" href="./">← На главную</a>
     <h1 id="tasks-heading">Задачи проекта</h1>
