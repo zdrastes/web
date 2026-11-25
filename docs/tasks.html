@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'">
-  <title>Задачи команды · Портал L2</title>
+  <title>Задачи проекта · Портал L2</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <style>
     :root{font:14px Inter,system-ui,sans-serif;color:#1C1E21;background:#F3F5F8;--muted:#7A828E;--soft:#F0F2F5}
@@ -17,7 +17,13 @@
     main{padding:24px 0 48px}.back{display:inline-block;margin-bottom:16px;color:#54447d}
     h1{font-size:28px;font-weight:700;margin:0 0 6px;letter-spacing:-.035em}
     h2{font-size:18px;font-weight:600;margin:0;letter-spacing:-.022em}
-    .subtitle{margin:0 0 20px}
+    .subtitle{margin:0 0 16px}
+    .task-views{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+    .task-views button,#task-employee{border:1px solid #e5e0ee;border-radius:12px;padding:9px 12px;background:#fff;color:#1C1E21;font:inherit}
+    .task-views button{cursor:pointer}
+    .task-views button[aria-pressed=true]{background:#e9e2f8;color:#513886;font-weight:650}
+    .task-views button:focus-visible,#task-employee:focus-visible{outline:2px solid #765bb6;outline-offset:2px}
+    #task-employee-field{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
     .bento{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,268px);grid-template-areas:"tasks metrics" "tasks distribution";grid-template-rows:auto 1fr;align-items:start;gap:16px}
     .card{position:relative;min-width:0;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 12px rgba(16,24,40,.03);padding:20px}
     .metrics{grid-area:metrics}.distribution{grid-area:distribution;padding:14px}.distribution h2{font-size:16px}
@@ -77,8 +83,14 @@
   <header class="shell"><a href="./"><span class="mark">L2</span> Портал L2</a><span>Демо-версия</span></header>
   <main class="shell">
     <a class="back" href="./">← На главную</a>
-    <h1>Задачи команды</h1>
-    <p class="subtitle muted">Проект DEMO · синтетические данные</p>
+    <h1 id="tasks-heading">Задачи проекта</h1>
+    <p class="subtitle muted" id="tasks-subtitle">Проект DEMO · синтетические данные</p>
+    <nav class="task-views" aria-label="Разделы задач">
+      <button type="button" data-task-view="project" aria-pressed="true">Задачи проекта</button>
+      <button type="button" data-task-view="today" aria-pressed="false">Мои задачи на сегодня</button>
+      <button type="button" data-task-view="team" aria-pressed="false">Мои задачи командные</button>
+    </nav>
+    <label id="task-employee-field" hidden>Демосотрудник <select id="task-employee"></select></label>
     <div class="bento">
       <section class="card metrics" aria-labelledby="metrics-title">
         <h2 id="metrics-title">Сводка по задачам</h2>
@@ -125,6 +137,28 @@
         { id: 'DEMO-107', title: 'Сверить данные по закрытым обращениям', tag: 'Данные', status: 'recalc', date: '2026-11-25' },
         { id: 'DEMO-108', title: 'Проверить загрузку отчёта после обновления', tag: 'Отчётность', status: 'fix', date: '2026-11-26' },
       ];
+      const staffTasks = [
+        ['Анна Волкова', ['Сверить сводку по обращениям', 'Подготовить заметки к встрече команды']],
+        ['Илья Орлов', ['Проверить журнал синхронизации', 'Описать шаги воспроизведения ошибки']],
+        ['Мария Соколова', ['Пересчитать выборку по отчёту', 'Обновить справочник меток']],
+        ['Денис Лебедев', ['Проверить выгрузку за неделю', 'Собрать примеры для проверки фикса']],
+        ['Ольга Крылова', ['Проверить доступ к демопроекту', 'Обновить инструкцию для команды']],
+      ];
+      const teamTasks = staffTasks.flatMap(([, titles], employee) => titles.map((title, i) => ({
+        id: 'TEAM-' + (101 + employee * 2 + i), title, employee,
+        tag: i ? 'Командная работа' : 'Проверка',
+        status: i ? ['dev', 'fix', 'recalc'][employee % 3] : 'open',
+        date: i ? '2026-11-26' : '2026-11-25',
+      })));
+      const views = {
+        project: ['Задачи проекта', 'Проект DEMO · синтетические данные'],
+        today: ['Мои задачи на сегодня', 'Все открытые задачи проекта DEMO'],
+        team: ['Мои задачи командные', 'Тестовые задачи выбранного сотрудника'],
+      };
+      let taskView = 'project';
+      const employeeSelect = $('task-employee');
+      staffTasks.forEach(([name], i) => employeeSelect.add(new Option(name, i)));
+      const viewButtons = document.querySelectorAll('[data-task-view]');
       const labels = {
         open: 'Открытые',
         dev: 'Передано в разработку',
@@ -144,7 +178,7 @@
       } catch {}
       const getStatus = task => Object.hasOwn(labels, saved[task.id]) ? saved[task.id] : task.status;
       const tagKey = 'zdrastes.web.demo.project-task-tags.v1';
-      const tags = [...new Set(tasks.map(task => task.tag))].sort(collator.compare);
+      const tags = [...new Set([...tasks, ...teamTasks].map(task => task.tag))].sort(collator.compare);
       let savedTags = {};
       try {
         const stored = JSON.parse(localStorage.getItem(tagKey));
@@ -156,9 +190,19 @@
       let editing;
       const filters = { status: '', tag: '' };
       const resetFilters = $('reset-filters');
-      resetFilters.addEventListener('click', () => {
+      function visibleTasks() {
+        if (taskView === 'today') return tasks.filter(task => getStatus(task) === 'open');
+        if (taskView === 'team') return teamTasks.filter(task => task.employee === Number(employeeSelect.value));
+        return tasks;
+      }
+      function resetTable() {
         filters.status = '';
         filters.tag = '';
+        sortKey = 'status';
+        direction = 1;
+      }
+      resetFilters.addEventListener('click', () => {
+        resetTable();
         render();
         document.querySelector('[data-sort="status"]').focus({ preventScroll: true });
       });
@@ -206,6 +250,7 @@
         document.querySelector('[data-sort="' + editing + '"]')?.focus({ preventScroll: true });
       });
       function renderChart() {
+        const tasks = visibleTasks();
         const counts = { open: 0, dev: 0, recalc: 0, fix: 0 };
         for (const item of tasks) counts[getStatus(item)] += 1;
         $('task-total').textContent = tasks.length;
@@ -231,8 +276,8 @@
         }));
       }
      function render() {
-        resetFilters.disabled = !filters.status && !filters.tag;
-        const matches = tasks.filter(item =>
+        resetFilters.disabled = !filters.status && !filters.tag && sortKey === 'status' && direction === 1;
+        const matches = visibleTasks().filter(item =>
           (!filters.status || getStatus(item) === filters.status) &&
           (!filters.tag || getTag(item) === filters.tag)
         ).sort((a, b) => {
@@ -298,8 +343,26 @@
           render();
         });
       }
-      renderChart();
-      render();
+      function showView() {
+        const [title, subtitle] = views[taskView];
+        $('tasks-heading').textContent = title;
+        $('tasks-subtitle').textContent = subtitle;
+        $('task-employee-field').hidden = taskView !== 'team';
+        for (const button of viewButtons) {
+          button.setAttribute('aria-pressed', String(button.dataset.taskView === taskView));
+        }
+        resetTable();
+        renderChart();
+        render();
+      }
+      for (const button of viewButtons) {
+        button.addEventListener('click', () => {
+          taskView = button.dataset.taskView;
+          showView();
+        });
+      }
+      employeeSelect.addEventListener('change', showView);
+      showView();
     })();
   </script>
 </body>
