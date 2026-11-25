@@ -81,6 +81,21 @@
     #picker-search{width:100%;border:0;border-radius:12px;padding:9px 10px;background:#F0F2F5;color:inherit;font:inherit}
     #picker-options{display:grid;gap:6px}#picker-options button{text-align:left}
     #picker-message:empty{display:none}
+    .daily-actions,.move-actions{display:flex;gap:5px;flex-wrap:wrap}
+    .daily-actions button,.move-actions button,#move-task-date{border:0;border-radius:8px;background:#F0F2F5;color:#443269;padding:6px 8px;font:inherit}
+    .daily-actions button,.move-actions button{cursor:pointer}
+    .daily-actions button{font-size:12px}
+    .daily-actions button:hover,.move-actions button:hover{background:#e9e2fa}
+    .daily-actions button:focus-visible,#move-task-dialog :focus-visible{outline:2px solid #765bb6;outline-offset:2px}
+    .daily-view .reason-table{min-width:690px}
+    [data-status="waiting"]{--status-accent:#8a75cc;--status-bg:#f0ebfa;--status-text:#563c8f}
+    [data-status="closed"]{--status-accent:#52a487;--status-bg:#e7f6ef;--status-text:#21664d}
+    [data-status="moved"]{--status-accent:#c99345;--status-bg:#fcf1df;--status-text:#7d4d12}
+    #move-task-dialog{width:min(410px,calc(100% - 32px));border:0;border-radius:20px;padding:18px;color:#1C1E21}
+    #move-task-dialog::backdrop{background:#2b224553}
+    #move-task-date{display:block;width:100%;margin:6px 0 14px}
+    .move-actions{justify-content:flex-end}
+    #move-task-error:empty{display:none}
   </style>
 </head>
 <body>
@@ -99,7 +114,7 @@
       <section class="card metrics" aria-labelledby="metrics-title">
         <h2 id="metrics-title">Сводка по задачам</h2>
         <svg class="card-icon" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="11" fill="#EFEAFC"/><path d="M11 24v-5m7 5V12m7 12v-8" stroke="#7961B2" stroke-width="2.2" stroke-linecap="round"/></svg>
-        <dl><div><dt>Всего</dt><dd id="task-total">—</dd></div><div><dt>Открытые</dt><dd id="task-open">—</dd></div><div><dt>В работе и ожидании</dt><dd id="task-active">—</dd></div></dl>
+        <dl><div><dt>Всего</dt><dd id="task-total">—</dd></div><div><dt id="task-open-label">Открытые</dt><dd id="task-open">—</dd></div><div><dt id="task-active-label">В работе и ожидании</dt><dd id="task-active">—</dd></div></dl>
       </section>
       <section class="card tasks" aria-labelledby="tasks-title">
         <h2 id="tasks-title">Список задач</h2>
@@ -110,6 +125,7 @@
             <tbody id="reason-list"></tbody>
           </table>
         </div>
+        <p id="daily-feedback" class="muted" role="status"></p>
         <p id="reason-empty" class="muted" role="status"></p>
       </section>
       <section class="card distribution" aria-labelledby="status-chart-title">
@@ -118,6 +134,19 @@
       </section>
     </div>
   </main>
+  <dialog id="move-task-dialog" aria-labelledby="move-task-title">
+    <form id="move-task-form">
+      <h2 id="move-task-title">Перенести задачу</h2>
+      <p id="move-task-name" class="muted"></p>
+      <label for="move-task-date">Новая дата</label>
+      <input type="date" id="move-task-date" required>
+      <div class="move-actions">
+        <button type="button" id="move-task-cancel">Отмена</button>
+        <button type="submit">Перенести</button>
+      </div>
+      <p id="move-task-error" class="muted" role="status"></p>
+    </form>
+  </dialog>
   <dialog id="task-picker" aria-labelledby="picker-title">
     <div class="picker-head"><h2 id="picker-title"></h2><button type="button" id="picker-close">Закрыть</button></div>
     <label id="picker-search-label" hidden>Поиск метки <input id="picker-search" type="search" autocomplete="off"></label>
@@ -165,7 +194,58 @@
         recalc: 'Перерасчёт',
         fix: 'Ожидаем фикс',
       };
-      const order = Object.keys(labels);
+      const dailyLabels = { waiting: 'Ждёт действия', closed: 'Закрыто', moved: 'Перенесено' };
+      const statusLabels = () => taskView === 'today' ? dailyLabels : labels;
+      const dailyKey = 'zdrastes.web.demo.daily-task-actions.v1';
+      let dailyActions = {};
+      try {
+        const stored = JSON.parse(localStorage.getItem(dailyKey));
+        if (stored && typeof stored === 'object' && !Array.isArray(stored)) dailyActions = stored;
+      } catch {}
+      const dayStatus = task => Object.hasOwn(dailyLabels, dailyActions[task.id]?.status)
+        ? dailyActions[task.id].status : 'waiting';
+      const displayStatus = task => taskView === 'today' ? dayStatus(task) : getStatus(task);
+      const formatDate = date => date.split('-').reverse().join('.');
+      const moveDialog = $('move-task-dialog');
+      const moveDate = $('move-task-date');
+      let movingTask;
+      function saveDailyAction(task, action, message) {
+        const updated = { ...dailyActions, [task.id]: action };
+        try { localStorage.setItem(dailyKey, JSON.stringify(updated)); } catch {
+          message.textContent = 'Не удалось сохранить изменение в браузере.';
+          message.hidden = false;
+          return false;
+        }
+        dailyActions = updated;
+        $('daily-feedback').textContent = '';
+        renderChart();
+        render();
+        return true;
+      }
+      function dailyButton(title, handler) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = title;
+        button.addEventListener('click', handler);
+        return button;
+      }
+      function openMove(task) {
+        movingTask = task;
+        $('move-task-name').textContent = task.id + ' · ' + task.title;
+        $('move-task-error').textContent = '';
+        moveDate.value = dailyActions[task.id]?.date || '';
+        moveDialog.showModal();
+        moveDate.focus();
+        try { moveDate.showPicker?.(); } catch {}
+      }
+      $('move-task-cancel').addEventListener('click', () => moveDialog.close());
+      $('move-task-form').addEventListener('submit', event => {
+        event.preventDefault();
+        if (!moveDate.value || !moveDate.validity.valid) return;
+        if (saveDailyAction(movingTask, { status: 'moved', date: moveDate.value }, $('move-task-error'))) {
+          moveDialog.close();
+        }
+      });
       const collator = new Intl.Collator('ru');
       const sortButtons = document.querySelectorAll('[data-sort]');
       let sortKey = 'status';
@@ -219,7 +299,7 @@
       function renderOptions() {
         const field = editing;
         const query = search.value.trim().toLocaleLowerCase('ru');
-        const options = field === 'tag' ? tags.map(tag => [tag, tag]) : Object.entries(labels);
+        const options = field === 'tag' ? tags.map(tag => [tag, tag]) : Object.entries(statusLabels());
         const matches = options.filter(([, title]) => title.toLocaleLowerCase('ru').includes(query));
         const clear = field === 'tag' ? 'Все метки' : 'Все статусы';
         $('picker-options').replaceChildren(...[['', clear], ...matches].map(([value, title]) => {
@@ -243,12 +323,17 @@
       });
       function renderChart() {
         const tasks = visibleTasks();
-        const counts = { open: 0, dev: 0, recalc: 0, fix: 0 };
-        for (const item of tasks) counts[getStatus(item)] += 1;
+        const statuses = statusLabels();
+        const counts = Object.fromEntries(Object.keys(statuses).map(status => [status, 0]));
+        for (const item of tasks) counts[displayStatus(item)] += 1;
         $('task-total').textContent = tasks.length;
-        $('task-open').textContent = counts.open;
-        $('task-active').textContent = tasks.length - counts.open;
-        $('reason-chart').replaceChildren(...Object.entries(labels).map(([value, label]) => {
+        const today = taskView === 'today';
+        const open = today ? counts.waiting : counts.open;
+        $('task-open-label').textContent = today ? 'Ждут действия' : 'Открытые';
+        $('task-active-label').textContent = today ? 'Закрыты или перенесены' : 'В работе и ожидании';
+        $('task-open').textContent = open;
+        $('task-active').textContent = tasks.length - open;
+        $('reason-chart').replaceChildren(...Object.entries(statuses).map(([value, label]) => {
           const row = document.createElement('div');
           row.className = 'status-row';
           row.dataset.status = value;
@@ -270,12 +355,13 @@
      function render() {
         resetFilters.disabled = !filters.status && !filters.tag && sortKey === 'status' && direction === 1;
         const matches = visibleTasks().filter(item =>
-          (!filters.status || getStatus(item) === filters.status) &&
+          (!filters.status || displayStatus(item) === filters.status) &&
           (!filters.tag || getTag(item) === filters.tag)
         ).sort((a, b) => {
           if (sortKey === 'date') return direction * a.date.localeCompare(b.date);
           if (sortKey === 'tag') return direction * collator.compare(getTag(a), getTag(b));
-          return direction * (order.indexOf(getStatus(a)) - order.indexOf(getStatus(b)));
+          const order = Object.keys(statusLabels());
+          return direction * (order.indexOf(displayStatus(a)) - order.indexOf(displayStatus(b)));
         });
         for (const button of sortButtons) {
           const active = button.dataset.sort === sortKey;
@@ -293,7 +379,7 @@
             const value = filters[field];
             filter.classList.toggle('filter-active', Boolean(value));
             filter.setAttribute('aria-label', value ? column + ': ' +
-              (field === 'tag' ? value : labels[value]) : column);
+              (field === 'tag' ? value : statusLabels()[value]) : column);
           }
         }
         $('reason-list').replaceChildren(...matches.map(item => {
@@ -307,10 +393,11 @@
           detail.textContent = item.id;
           label.append(detail);
           const status = document.createElement('td');
-          const value = getStatus(item);
+          const value = displayStatus(item);
           const badge = document.createElement('span');
           badge.className = 'status-label';
-          badge.textContent = labels[value];
+          const movedDate = taskView === 'today' && value === 'moved' ? dailyActions[item.id]?.date : '';
+          badge.textContent = movedDate ? 'Перенесено на ' + formatDate(movedDate) : statusLabels()[value];
           badge.dataset.status = value;
           status.append(badge);
           const tagCell = document.createElement('td');
@@ -326,6 +413,15 @@
           dateCell.append(date);
           const actionCell = document.createElement('td');
           actionCell.className = 'filter-cell';
+          if (taskView === 'today' && value !== 'closed') {
+            const actions = document.createElement('div');
+            actions.className = 'daily-actions';
+            actions.append(
+              dailyButton('Закрыть', () => saveDailyAction(item, { status: 'closed' }, $('daily-feedback'))),
+              dailyButton('Перенести', () => openMove(item))
+            );
+            actionCell.append(actions);
+          }
           row.append(label, status, tagCell, dateCell, actionCell);
           return row;
         }));
@@ -344,6 +440,8 @@
         $('tasks-heading').textContent = title;
         $('tasks-subtitle').textContent = subtitle;
         $('task-employee-field').hidden = taskView !== 'team';
+        document.querySelector('.bento').classList.toggle('daily-view', taskView === 'today');
+        $('daily-feedback').textContent = '';
         for (const button of viewButtons) {
           button.setAttribute('aria-pressed', String(button.dataset.taskView === taskView));
         }
