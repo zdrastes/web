@@ -1,0 +1,55 @@
+# Caddy перед uvicorn: HTTPS-сертификаты и редирект HTTP→HTTPS берёт на себя Caddy,
+# приложение остаётся доступным только на localhost.
+#
+# Запуск:      Windows: caddy run --config Caddyfile
+#              Linux:   скопировать в /etc/caddy/Caddyfile, systemctl reload caddy
+#                       (подробно — README «Запуск на Linux-сервере»)
+# Проверка:    caddy validate --config Caddyfile
+# Приложение:  uvicorn app.main:app --host 127.0.0.1 --port 8000 --proxy-headers
+#
+# Сайт отдаётся с корня домена: пути в коде относительные, работа из подпути
+# (site.com/l2/) не поддерживается.
+#
+# Для HTTPS-вариантов ниже включить в .env SECURE_COOKIES=1 (cookie «Secure»),
+# для HTTP-варианта — оставить SECURE_COOKIES=0, иначе браузер не примет cookie.
+#
+# Блок header добавляет заголовки безопасности: HSTS, запрет браузеру угадывать
+# тип содержимого (nosniff), запрет встраивания сайта в iframe и отказ отправлять
+# адрес-источник на сторонние сайты. В HTTP-варианте HSTS не работает — там он не ставится.
+
+# Основной вариант: свой домен, Caddy сам получит и продлит сертификат Let's Encrypt.
+# Замените на свой домен — DNS A/AAAA-запись должна указывать на этот сервер.
+l2-analytics.example.com {
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+	}
+	reverse_proxy 127.0.0.1:8000
+}
+
+# Альтернативы — заменить блок выше:
+#
+# Внутренняя сеть без доступа к Let's Encrypt — самоподписанный сертификат Caddy
+# (корневой сертификат его локального CA ставят на рабочие машины: caddy trust):
+#	l2-analytics.corp.local {
+#		header {
+#			Strict-Transport-Security "max-age=31536000"
+#			X-Content-Type-Options "nosniff"
+#			X-Frame-Options "DENY"
+#			Referrer-Policy "no-referrer"
+#		}
+#		tls internal
+#		reverse_proxy 127.0.0.1:8000
+#	}
+#
+# Простой HTTP без TLS — только для локальной проверки (HSTS по HTTP не работает):
+#	:8080 {
+#		header {
+#			X-Content-Type-Options "nosniff"
+#			X-Frame-Options "DENY"
+#			Referrer-Policy "no-referrer"
+#		}
+#		reverse_proxy 127.0.0.1:8000
+#	}

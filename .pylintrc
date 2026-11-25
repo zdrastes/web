@@ -1,0 +1,24 @@
+# Конфигурация pylint для CI-джобы линтера (devops/ci/templates, джоба pylint).
+# Джоба запускает pylint из корня репозитория без флагов — файл читается автоматически.
+
+[MAIN]
+# Де-факто лимит строки в репозитории — 120: длиннее была всего одна строка
+# (docstring config.py), остальные нарушения 100–121 сложились без контроля длины.
+max-line-length = 120
+
+[MESSAGES CONTROL]
+# Отключаем метрики дизайна и требование docstring на каждом классе/методе:
+# это стилевые сигналы, а не дефекты. Крупные фабрика create_app (main.py),
+# слой БД (db.py) и модели с 13 полями (config.Settings) — сознательные решения.
+# Всё остальное (ошибки E, предупреждения W, стиль C, включая line-too-long) включено.
+disable =
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods,
+    too-many-arguments,
+    too-many-branches,
+    too-many-instance-attributes,
+    too-many-locals,
+    too-many-positional-arguments,
+    too-many-return-statements,
+    too-many-statements

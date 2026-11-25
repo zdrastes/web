@@ -1,0 +1,58 @@
+"""Стартовые продукты: коды чтения задач трекера и миграция баз с ошибочными alias'ами."""
+from sqlalchemy.orm import sessionmaker
+
+from app import db
+
+
+def products_by_name(engine) -> dict[str, tuple[str, str]]:
+    with db.session_factory(engine)() as session:
+        return {
+            product["name"]: (product["namespace"], product["project_code"])
+            for product in db.load_products(session)
+        }
+
+
+def test_default_products_seed_tracker_read_codes(tmp_path):
+    engine = db.create_engine("sqlite:///" + (tmp_path / "fresh.db").as_posix())
+
+    db.init_db(engine)
+
+    codes = products_by_name(engine)
+    assert codes["WMS"] == ("LOGSUPPORT", "WMS")
+    assert codes["Trans"] == ("LOGSUPPORT", "LTS")
+    engine.dispose()
+
+
+def test_init_db_fixes_legacy_alias_codes(tmp_path):
+    """Базы до 19.11.2026: в WMS/Trans лежали alias'ы создания задач — задачи не грузились."""
+    engine = db.create_engine("sqlite:///" + (tmp_path / "legacy.db").as_posix())
+    db.Base.metadata.create_all(engine)
+    with db.session_factory(engine)() as session:
+        session.add(db.Product(
+            name="WMS", namespace="transport-logistic-support", project_code="wh-wms-support", sort_order=0,
+        ))
+        session.add(db.Product(
+            name="Trans", namespace="transport-logistic-support",
+            project_code="transportation-l2-support", sort_order=1,
+        ))
+        session.commit()
+
+    db.init_db(engine)
+
+    codes = products_by_name(engine)
+    assert codes["WMS"] == ("LOGSUPPORT", "WMS")
+    assert codes["Trans"] == ("LOGSUPPORT", "LTS")
+    engine.dispose()
+
+
+def test_init_db_keeps_custom_codes(tmp_path):
+    engine = db.create_engine("sqlite:///" + (tmp_path / "custom.db").as_posix())
+    db.Base.metadata.create_all(engine)
+    with db.session_factory(engine)() as session:
+        session.add(db.Product(name="Свой", namespace="MYNS", project_code="MYPROJ", sort_order=0))
+        session.commit()
+
+    db.init_db(engine)
+
+    assert products_by_name(engine)["Свой"] == ("MYNS", "MYPROJ")
+    engine.dispose()

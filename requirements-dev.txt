@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8.0
+# pytest-cov 6.3+ — markdown-отчёт покрытия: CI-джоба coverage шаблона ждёт coverage.txt
+pytest-cov>=6.3

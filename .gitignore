@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+# Артефакты покрытия: pytest-cov создаёт файл данных .coverage, из которого
+# CI-джоба coverage шаблона (python/test.yml) строит coverage.txt и coverage.xml.
+coverage.txt
+coverage.xml
+.coverage*
+# Окружение tox (его использует CI-джоба python test) и junit-отчёт pytest
+.tox/
+report.xml
+.env
+.venv/
+# Рантайм-артефакты SQLite: база и её shadow-файлы (-shm, -wal, -journal).
+# Файлы, уже попавшие в git, снимаются с учёта: git rm --cached <файл>.
+l2_analytics.db*
+*.db-journal
+backups/
+.bedrock/
+root (1).crt
