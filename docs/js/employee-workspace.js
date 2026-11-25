@@ -535,11 +535,8 @@
       showSession(true);
       try {
         sessionStorage.setItem(sessionKey, '1');
-      } catch {
-        $('account-login').focus();
-        return;
-      }
-      location.assign('./');
+      } catch {}
+      $('account-login').focus();
     });
     $('account-login').addEventListener('click', () => {
       try { sessionStorage.removeItem(sessionKey); } catch {}
