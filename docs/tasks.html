@@ -44,6 +44,7 @@
     .status-label,.task-tag{display:inline-block;max-width:100%;border-radius:999px;font-size:12px;padding:5px 8px}
     .reason-table th:nth-child(2),.reason-table td:nth-child(2){width:1%;white-space:nowrap}
     .status-label{max-width:none;white-space:nowrap;background:var(--status-bg);color:var(--status-text)}
+    .task-date{white-space:nowrap;color:#4F596A;font-size:13px;font-variant-numeric:tabular-nums}
     .task-tag{background:#F0F2F5;color:#4F596A}
     .table-scroll:focus-visible{outline:2px solid #765bb6;outline-offset:-2px}
     [data-status="open"]{--status-accent:#8A75CC;--status-bg:#F0EBFA;--status-text:#563C8F}
@@ -81,7 +82,7 @@
         <label class="search">Статус задач <select id="status-filter" disabled><option value="">Все статусы</option></select></label>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица задач проекта DEMO">
           <table class="reason-table" aria-labelledby="tasks-title">
-            <thead><tr><th scope="col">Задача</th><th scope="col">Статус</th><th scope="col">Метка</th></tr></thead>
+            <thead><tr><th scope="col">Задача</th><th scope="col">Статус</th><th scope="col">Метка</th><th scope="col" title="Дата создания">Дата</th></tr></thead>
             <tbody id="reason-list"></tbody>
           </table>
         </div>
@@ -97,14 +98,14 @@
     (() => {
       const $ = id => document.getElementById(id);
       const tasks = [
-        { id: 'DEMO-101', title: 'Разобрать повторные обращения по интеграции', tag: 'Интеграция', status: 'open' },
-        { id: 'DEMO-102', title: 'Исправить дублирование записей при повторной синхронизации', tag: 'Синхронизация', status: 'dev' },
-        { id: 'DEMO-103', title: 'Пересчитать итог по обращениям за неделю', tag: 'Отчётность', status: 'recalc' },
-        { id: 'DEMO-104', title: 'Проверить исправление ошибки выгрузки отчёта', tag: 'Выгрузка', status: 'fix' },
-        { id: 'DEMO-105', title: 'Уточнить сценарий ошибки доступа к проекту', tag: 'Доступ', status: 'open' },
-        { id: 'DEMO-106', title: 'Убрать ошибку при переключении фильтра', tag: 'Интерфейс', status: 'dev' },
-        { id: 'DEMO-107', title: 'Сверить данные по закрытым обращениям', tag: 'Данные', status: 'recalc' },
-        { id: 'DEMO-108', title: 'Проверить загрузку отчёта после обновления', tag: 'Отчётность', status: 'fix' },
+        { id: 'DEMO-101', title: 'Разобрать повторные обращения по интеграции', tag: 'Интеграция', status: 'open', date: '2026-11-17' },
+        { id: 'DEMO-102', title: 'Исправить дублирование записей при повторной синхронизации', tag: 'Синхронизация', status: 'dev', date: '2026-11-18' },
+        { id: 'DEMO-103', title: 'Пересчитать итог по обращениям за неделю', tag: 'Отчётность', status: 'recalc', date: '2026-11-19' },
+        { id: 'DEMO-104', title: 'Проверить исправление ошибки выгрузки отчёта', tag: 'Выгрузка', status: 'fix', date: '2026-11-20' },
+        { id: 'DEMO-105', title: 'Уточнить сценарий ошибки доступа к проекту', tag: 'Доступ', status: 'open', date: '2026-11-23' },
+        { id: 'DEMO-106', title: 'Убрать ошибку при переключении фильтра', tag: 'Интерфейс', status: 'dev', date: '2026-11-24' },
+        { id: 'DEMO-107', title: 'Сверить данные по закрытым обращениям', tag: 'Данные', status: 'recalc', date: '2026-11-25' },
+        { id: 'DEMO-108', title: 'Проверить загрузку отчёта после обновления', tag: 'Отчётность', status: 'fix', date: '2026-11-26' },
       ];
       const labels = {
         open: 'Открытые',
@@ -172,7 +173,13 @@
           tag.className = 'task-tag';
           tag.textContent = item.tag;
           tagCell.append(tag);
-          row.append(label, status, tagCell);
+          const dateCell = document.createElement('td');
+          dateCell.className = 'task-date';
+          const date = document.createElement('time');
+          date.dateTime = item.date;
+          date.textContent = item.date.split('-').reverse().join('.');
+          dateCell.append(date);
+          row.append(label, status, tagCell, dateCell);
           return row;
         }));
         $('reason-empty').textContent = matches.length ? '' : tasks.length
