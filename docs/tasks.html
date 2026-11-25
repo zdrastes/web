@@ -55,9 +55,7 @@
     @media(max-width:780px){.bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"metrics distribution" "tasks tasks";grid-template-rows:auto}}
     @media(max-width:520px){.shell{width:calc(100% - 28px)}.bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"metrics" "tasks" "distribution"}.card{padding:16px}}
     @media(prefers-reduced-motion:reduce){.button{transition:none}}
-    button.status-label,button.task-tag{border:0;cursor:pointer;font-family:inherit}
-    button.status-label:hover,button.task-tag:hover{filter:brightness(.95)}
-    button.status-label:focus-visible,button.task-tag:focus-visible,#task-picker :focus-visible{outline:2px solid #765bb6;outline-offset:2px}
+    #task-picker :focus-visible{outline:2px solid #765bb6;outline-offset:2px}
     #task-picker{width:min(430px,calc(100% - 32px));max-height:85dvh;padding:18px;border:0;border-radius:20px;color:#1C1E21;background:white}
     #task-picker::backdrop{background:#2b224553}
     .picker-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -66,7 +64,7 @@
     #task-picker button[aria-pressed=true]{background:#e9e2fa;color:#4e3684;font-weight:650}
     #picker-search-label{display:grid;gap:5px;margin-bottom:10px;font-size:13px}
     #picker-search{width:100%;border:0;border-radius:12px;padding:9px 10px;background:#F0F2F5;color:inherit;font:inherit}
-    #picker-options{display:grid;gap:6px}#picker-options button{text-align:left}
+    .picker-sort{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}#picker-options{display:grid;gap:6px}#picker-options button{text-align:left}
     #picker-message:empty{display:none}
   </style>
 </head>
@@ -87,7 +85,7 @@
         <p class="muted">Тестовые задачи DEMO.</p>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица задач проекта DEMO">
           <table class="reason-table" aria-labelledby="tasks-title">
-            <thead><tr><th scope="col">Задача</th><th scope="col" aria-sort="ascending"><button class="sort-column" type="button" data-sort="status">Статус <span aria-hidden="true">↑</span></button></th><th scope="col"><button class="sort-column" type="button" data-sort="tag">Метка <span aria-hidden="true">↕</span></button></th><th scope="col" title="Дата создания">Дата</th></tr></thead>
+            <thead><tr><th scope="col">Задача</th><th scope="col" aria-sort="ascending"><button class="sort-column" type="button" data-sort="status" aria-haspopup="dialog">Статус <span aria-hidden="true">↑</span></button></th><th scope="col"><button class="sort-column" type="button" data-sort="tag" aria-haspopup="dialog">Метка <span aria-hidden="true">↕</span></button></th><th scope="col" title="Дата создания">Дата</th></tr></thead>
             <tbody id="reason-list"></tbody>
           </table>
         </div>
@@ -101,7 +99,10 @@
   </main>
   <dialog id="task-picker" aria-labelledby="picker-title">
     <div class="picker-head"><h2 id="picker-title"></h2><button type="button" id="picker-close">Закрыть</button></div>
-    <p id="picker-task" class="muted"></p>
+    <div class="picker-sort">
+      <button type="button" id="picker-asc">По возрастанию ↑</button>
+      <button type="button" id="picker-desc">По убыванию ↓</button>
+    </div>
     <label id="picker-search-label" hidden>Поиск метки <input id="picker-search" type="search" autocomplete="off"></label>
     <div id="picker-options"></div>
     <p id="picker-message" class="muted" role="status"></p>
@@ -148,10 +149,10 @@
       const picker = $('task-picker');
       const search = $('picker-search');
       let editing;
-      function openPicker(task, field) {
-        editing = { task, field };
-        $('picker-title').textContent = field === 'tag' ? 'Выбрать метку' : 'Выбрать статус';
-        $('picker-task').textContent = task.id + ' · ' + task.title;
+      const filters = { status: '', tag: '' };
+      function openPicker(field) {
+        editing = field;
+        $('picker-title').textContent = field === 'tag' ? 'Фильтр по метке' : 'Фильтр по статусу';
         $('picker-search-label').hidden = field !== 'tag';
         search.value = '';
         renderOptions();
@@ -160,54 +161,37 @@
         else $('picker-options').querySelector('[aria-pressed="true"]')?.focus();
       }
       function renderOptions() {
-        const { task, field } = editing;
+        const field = editing;
         const query = search.value.trim().toLocaleLowerCase('ru');
         const options = field === 'tag' ? tags.map(tag => [tag, tag]) : Object.entries(labels);
-        const selected = field === 'tag' ? getTag(task) : getStatus(task);
         const matches = options.filter(([, title]) => title.toLocaleLowerCase('ru').includes(query));
-        $('picker-options').replaceChildren(...matches.map(([value, title]) => {
+        const clear = field === 'tag' ? 'Все метки' : 'Все статусы';
+        $('picker-options').replaceChildren(...[['', clear], ...matches].map(([value, title]) => {
           const button = document.createElement('button');
           button.type = 'button';
           button.textContent = title;
-          button.setAttribute('aria-pressed', String(value === selected));
-          button.addEventListener('click', () => saveChoice(value));
+          button.setAttribute('aria-pressed', String(value === filters[field]));
+          button.addEventListener('click', () => {
+            filters[field] = value;
+            render();
+            picker.close();
+          });
           return button;
         }));
         $('picker-message').textContent = matches.length ? '' : 'Метки не найдены.';
       }
-      function saveChoice(value) {
-        const { task, field } = editing;
-        const changingTag = field === 'tag';
-        const updated = { ...(changingTag ? savedTags : saved), [task.id]: value };
-        try {
-          localStorage.setItem(changingTag ? tagKey : storageKey, JSON.stringify(updated));
-        } catch {
-          $('picker-message').textContent = 'Не удалось сохранить изменение в браузере.';
-          return;
-        }
-        if (changingTag) savedTags = updated;
-        else saved = updated;
+      function setSort(nextDirection) {
+        sortKey = editing;
+        direction = nextDirection;
         render();
-        renderChart();
         picker.close();
       }
-      function editButton(task, field, text, className) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = className;
-        button.textContent = text;
-        button.dataset.taskEdit = task.id;
-        button.dataset.field = field;
-        button.setAttribute('aria-haspopup', 'dialog');
-        button.setAttribute('aria-label', (field === 'tag' ? 'Изменить метку' : 'Изменить статус') + ' ' + task.id + ': ' + text);
-        button.addEventListener('click', () => openPicker(task, field));
-        return button;
-      }
+      $('picker-asc').addEventListener('click', () => setSort(1));
+      $('picker-desc').addEventListener('click', () => setSort(-1));
       $('picker-close').addEventListener('click', () => picker.close());
       search.addEventListener('input', renderOptions);
       picker.addEventListener('close', () => {
-        const { task, field } = editing;
-        document.querySelector('[data-task-edit="' + task.id + '"][data-field="' + field + '"]')?.focus({ preventScroll: true });
+        document.querySelector('[data-sort="' + editing + '"]')?.focus({ preventScroll: true });
       });
       function renderChart() {
         const counts = { open: 0, dev: 0, recalc: 0, fix: 0 };
@@ -235,14 +219,22 @@
         }));
       }
      function render() {
-        const matches = [...tasks].sort((a, b) => direction * (sortKey === 'status'
+        const matches = tasks.filter(item =>
+          (!filters.status || getStatus(item) === filters.status) &&
+          (!filters.tag || getTag(item) === filters.tag)
+        ).sort((a, b) => direction * (sortKey === 'status'
           ? order.indexOf(getStatus(a)) - order.indexOf(getStatus(b))
           : collator.compare(getTag(a), getTag(b))));
         for (const button of sortButtons) {
           const active = button.dataset.sort === sortKey;
           if (active) button.parentElement.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
           else button.parentElement.removeAttribute('aria-sort');
-          button.querySelector('span').textContent = active ? (direction === 1 ? '↑' : '↓') : '↕';
+          const field = button.dataset.sort;
+          const filterValue = filters[field];
+          button.querySelector('span').textContent = filterValue ? '•' : active ? (direction === 1 ? '↑' : '↓') : '↕';
+          const column = field === 'tag' ? 'Метка' : 'Статус';
+          button.setAttribute('aria-label', filterValue ? column + ': ' +
+            (field === 'tag' ? filterValue : labels[filterValue]) : column);
         }
         $('reason-list').replaceChildren(...matches.map(item => {
           const row = document.createElement('tr');
@@ -256,11 +248,15 @@
           label.append(detail);
           const status = document.createElement('td');
           const value = getStatus(item);
-          const badge = editButton(item, 'status', labels[value], 'status-label');
+          const badge = document.createElement('span');
+          badge.className = 'status-label';
+          badge.textContent = labels[value];
           badge.dataset.status = value;
           status.append(badge);
           const tagCell = document.createElement('td');
-          const tag = editButton(item, 'tag', getTag(item), 'task-tag');
+          const tag = document.createElement('span');
+          tag.className = 'task-tag';
+          tag.textContent = getTag(item);
           tagCell.append(tag);
           const dateCell = document.createElement('td');
           dateCell.className = 'task-date';
@@ -271,15 +267,10 @@
           row.append(label, status, tagCell, dateCell);
           return row;
         }));
-        $('reason-empty').textContent = matches.length ? '' : 'В проекте пока нет задач.';
+        $('reason-empty').textContent = matches.length ? '' : 'Нет задач по выбранным фильтрам.';
       }
       for (const button of sortButtons) {
-        button.addEventListener('click', () => {
-          const nextKey = button.dataset.sort;
-          direction = sortKey === nextKey ? -direction : 1;
-          sortKey = nextKey;
-          render();
-        });
+        button.addEventListener('click', () => openPicker(button.dataset.sort));
       }
       renderChart();
       render();
