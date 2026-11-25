@@ -150,7 +150,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if purged:
             logger.info("Удалено истёкших сессий: %d", purged)
         scheduler = None
-        if settings.tracker_configured:
+        if settings.demo_mode:
+            demo_data.seed_demo_data(session_factory)
+        elif settings.tracker_configured:
             # первая синхронизация в фоне — не задерживаем старт сервера
             threading.Thread(target=run_sync, name="tracker-sync-once", daemon=True).start()
             scheduler = start_background_sync(run_sync, settings.sync_interval_minutes)
@@ -220,14 +222,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         """Доступен без входа: аноним получает username=null и пустой список функций."""
         session = auth.get_session(request.cookies, db_session)
         if session is None:
-            return {"username": None, "display_name": None, "is_admin": False, "permissions": []}
+            return {"username": None, "display_name": None, "is_admin": False, "permissions": [], "demo_mode": settings.demo_mode}
         site_user = db_session.get(db.SiteUser, session.username)
         return {
             "username": session.username,
             "display_name": ((site_user.display_name if site_user else "") or session.username),
             "is_admin": bool(site_user and site_user.role == "admin"),
-            "permissions": list(site_user.permissions or []) if site_user else [],
-        }
+        "permissions": list(site_user.permissions or []) if site_user else [],
+        "demo_mode": settings.demo_mode,
+    }
 
     @app.get("/api/data")
     def get_data(
@@ -534,6 +537,22 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "<p><a href='/auth/login'>Попробовать снова</a></p></body></html>",
             status_code=status_code,
         )
+
+    @app.post("/auth/demo-login", include_in_schema=False)
+    def demo_login(db_session: DbSession = Depends(get_db)):
+        """Демо-вход: создаёт демо-пользователя и сессию без SSO."""
+        if not settings.demo_mode:
+            return JSONResponse({"error": "Demo mode is disabled"}, status_code=403)
+        claims = {
+            "username": "demo",
+            "display_name": "Demo User",
+        }
+        site_user = db.provision_oidc_user(db_session, claims, settings.admins)
+        auth.purge_expired_sessions(db_session)
+        token = auth.create_session(db_session, site_user, settings.session_ttl_hours)
+        response = JSONResponse({"ok": True})
+        auth.set_session_cookie(response, token, settings)
+        return response
 
     @app.get("/auth/login", include_in_schema=False)
     def login_redirect(request: Request, db_session: DbSession = Depends(get_db)):

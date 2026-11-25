@@ -172,7 +172,7 @@ class TrackerClient:
         project: str = "DEMO",
         status_ids: tuple[str, ...] = (),
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
-        transport: httpx.BaseDEMO-TRANSport | None = None,
+        transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         credentials = base64.b64encode(f"demo_user:{token}".encode()).decode()

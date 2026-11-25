@@ -6,6 +6,7 @@
     const q = (selector, root) => (root || document).querySelector(selector);
     const dashboard = window.L2Dashboard;
     const login = q('#ld-login');
+const demoLoginButton = q('#ld-demo-login');
     const settingsButton = q('#ld-settings');
     const refreshButton = q('#ld-refresh');
     const logoutButton = q('#ld-logout');
@@ -35,7 +36,7 @@
     const productCancelButton = q('#ld-product-cancel');
     const productDeleteButton = q('#ld-product-delete');
 
-    const state = { me: null, reportRange: '', groups: [], trackerLabels: [], sprints: [], labelNotes: {}, notes: {}, noteItems: [], users: [], userEditing: null, products: [], selectedProduct: null, labelsProduct: null, trackerLabelsByProduct: {}, trackerLabelGroupsByProduct: {}, hiddenLabelsByProduct: {}, productEditing: null };
+    const state = { me: null, demoMode: false, reportRange: '', groups: [], trackerLabels: [], sprints: [], labelNotes: {}, notes: {}, noteItems: [], users: [], userEditing: null, products: [], selectedProduct: null, labelsProduct: null, trackerLabelsByProduct: {}, trackerLabelGroupsByProduct: {}, hiddenLabelsByProduct: {}, productEditing: null };
     try { state.reportRange = sessionStorage.getItem('l2-report-range') || ''; } catch {}
     const settingsPanes = { products: q('#ld-pane-products'), groups: q('#ld-pane-groups'), sprints: q('#ld-pane-sprints'), labels: q('#ld-pane-labels'), users: q('#ld-pane-users') };
     const periodDepth = q('#ld-period-depth');
@@ -69,9 +70,10 @@
         return body;
     }
 
-    function showLogin() {
-        state.me = null;
-        login.hidden = false;
+function showLogin() {
+state.me = null;
+login.hidden = false;
+if (demoLoginButton) demoLoginButton.hidden = !state.demoMode;
         userChip.hidden = true;
         logoutButton.hidden = true;
         settingsButton.hidden = true;
@@ -149,17 +151,23 @@
         }
     }
 
-    logoutButton.addEventListener('click', async () => {
-        if (window.L2DemoApi) { location.reload(); return; }
-        // Полный выход: сначала локальная сессия, затем — страница выхода SSO,
-        // чтобы SSO не впускал обратно без повторного ввода пароля.
-        let target = '/';
-        try {
-            const body = await (await fetch('/auth/logout', { method: 'POST' })).json();
-            if (body.logout_url) target = body.logout_url;
-        } catch {}
-        location.href = target;
-    });
+logoutButton.addEventListener('click', async () => {
+// Полный выход: сначала локальная сессия, затем — страница выхода SSO,
+// чтобы SSO не впускал обратно без повторного ввода пароля.
+let target = '/';
+try {
+const body = await (await fetch('/auth/logout', { method: 'POST' })).json();
+if (body.logout_url) target = body.logout_url;
+} catch {}
+location.href = target;
+});
+
+if (demoLoginButton) {
+demoLoginButton.addEventListener('click', async () => {
+try { await fetch('/auth/demo-login', { method: 'POST' }); } catch { /* демо-вход недоступен */ }
+location.href = '/';
+});
+}
 
     refreshButton.addEventListener('click', async () => {
         const label = refreshButton.querySelector('span');
@@ -924,17 +932,22 @@
         }
     });
 
-    async function init() {
-        let me;
-        try {
-            me = await api('/api/me');
-        } catch {
-            me = { username: null, is_admin: false };
-        }
-        if (!me.username) { showLogin(); return; }
-        showUser(me);
-        await loadData();
-    }
+async function init() {
+let me;
+try {
+me = await api('/api/me');
+} catch {
+me = { username: null, is_admin: false };
+}
+state.demoMode = Boolean(me.demo_mode);
+if (me.demo_mode && !me.username) {
+try { await fetch('/auth/demo-login', { method: 'POST' }); } catch { /* демо-вход недоступен */ }
+me = await api('/api/me');
+}
+if (!me.username) { showLogin(); return; }
+showUser(me);
+await loadData();
+}
 
     init();
 })();
