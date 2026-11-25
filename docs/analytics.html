@@ -8,6 +8,26 @@
         <title>Аналитика L2</title>
         <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237736cc'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' font-weight='bold' fill='white'%3EL2%3C/text%3E%3C/svg%3E">
         <link rel="stylesheet" href="css/dashboard.css?v=pages-settings-2">
+        <style>
+            #ld-create-task{display:inline-flex;align-items:center;gap:6px;padding:6px 9px;border-radius:8px;font-size:12px;line-height:1.2;white-space:nowrap;background:#f1edf9;color:#513886;border:1px solid #e6dcf5}
+            #ld-create-task[hidden]{display:none}
+            #ld-create-task:hover{background:#e8def7}
+            #ld-create-task:focus-visible,#ld-task-dialog :focus-visible{outline:2px solid #7953b4;outline-offset:2px}
+            #ld-task-dialog{box-sizing:border-box;width:min(440px,calc(100% - 28px));max-height:85dvh;padding:20px;border:1px solid #e6dff2;border-radius:18px;color:#221831;background:white}
+            #ld-task-dialog::backdrop{background:#20153258}
+            #ld-task-dialog h2{margin:0 0 6px;font-size:20px}
+            #ld-task-dialog p,#ld-task-dialog details{font-size:13px}
+            #ld-task-dialog label{display:grid;gap:5px;margin:12px 0}
+            #ld-task-dialog input,#ld-task-dialog textarea{width:100%;box-sizing:border-box;font:inherit;padding:8px;border:1px solid #ded7e9;border-radius:8px;color:inherit;background:#faf8fd}
+            #ld-task-dialog textarea{resize:vertical}
+            .ld-task-actions{display:flex;justify-content:flex-end;gap:8px}
+            .ld-task-actions button{border:0;border-radius:8px;padding:7px 10px;font:inherit;cursor:pointer}
+            .ld-task-actions button[type=submit]{background:#e8def7;color:#513886;font-weight:600}
+            #ld-task-list{padding-left:20px;margin-bottom:0}
+            #ld-task-list li{margin:0 0 6px;overflow-wrap:anywhere}
+            #ld-task-list p{white-space:pre-wrap;margin:3px 0;color:#575064}
+            #ld-task-status{min-height:1em;color:#513886}
+        </style>
     </head>
     <body>
 <div id="ld-demo-banner" style="background:#1f6feb;color:#fff;text-align:center;padding:6px 12px;font:600 13px/1.4 sans-serif"><a href="./" style="color:inherit;margin-right:16px">← Портал L2</a> ДЕМО-ВЕРСИЯ · данные синтетические</div>
@@ -28,6 +48,10 @@
                         <span>Настройки</span>
                     </button>
                     <button class="download" type="button" id="ld-download">Скачать HTML</button>
+                    <button class="upload" type="button" id="ld-create-task" aria-haspopup="dialog" hidden>
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                        Создать задачу
+                    </button>
                     <span class="user-chip" id="ld-user" hidden=""></span>
                     <button class="upload" type="button" id="ld-logout" hidden="">
                         <span>Выйти</span>
@@ -271,5 +295,84 @@
         <script src="js/demo-data.js?v=pages-settings-2"></script>
 <script src="js/demo-api.js?v=pages-settings-2"></script>
 <script src="js/dashboard-app.js?v=pages-settings-2"></script>
+        <dialog id="ld-task-dialog" aria-labelledby="ld-task-title">
+            <h2 id="ld-task-title">Создать задачу</h2>
+            <p>Демозадачи сохраняются в этом браузере.</p>
+            <form id="ld-task-form">
+                <label>Название <input name="title" maxlength="120" required autofocus></label>
+                <label>Описание <textarea name="description" rows="3" maxlength="1200"></textarea></label>
+                <div class="ld-task-actions">
+                    <button id="ld-task-close" type="button">Закрыть</button>
+                    <button type="submit">Создать</button>
+                </div>
+                <p id="ld-task-status" role="status"></p>
+            </form>
+            <details id="ld-task-history" hidden>
+                <summary>Созданные задачи</summary>
+                <ul id="ld-task-list"></ul>
+            </details>
+        </dialog>
+        <script>
+        (() => {
+            const button = document.getElementById('ld-create-task');
+            button.hidden = location.protocol === 'file:';
+            if (button.hidden) return;
+            const dialog = document.getElementById('ld-task-dialog');
+            const form = document.getElementById('ld-task-form');
+            const status = document.getElementById('ld-task-status');
+            const history = document.getElementById('ld-task-history');
+            const list = document.getElementById('ld-task-list');
+            const key = 'zdrastes.web.analytics.tasks.v1';
+            function loadTasks() {
+                const stored = JSON.parse(localStorage.getItem(key) || '[]');
+                return Array.isArray(stored) ? stored : [];
+            }
+            function showTasks(tasks) {
+                history.hidden = !tasks.length;
+                list.replaceChildren(...tasks.map(task => {
+                    const entry = document.createElement('li');
+                    const title = document.createElement('strong');
+                    title.textContent = task.title;
+                    entry.append(title);
+                    if (task.description) {
+                        const description = document.createElement('p');
+                        description.textContent = task.description;
+                        entry.append(description);
+                    }
+                    return entry;
+                }));
+            }
+            button.addEventListener('click', () => {
+                status.textContent = '';
+                try { showTasks(loadTasks()); } catch { status.textContent = 'Хранилище браузера недоступно.'; }
+                dialog.showModal();
+            });
+            document.getElementById('ld-task-close').addEventListener('click', () => dialog.close());
+            dialog.addEventListener('close', () => {
+                list.replaceChildren();
+                history.hidden = true;
+                history.open = false;
+            });
+            form.addEventListener('submit', event => {
+                event.preventDefault();
+                const fields = new FormData(form);
+                const title = fields.get('title').trim();
+                if (!title) {
+                    status.textContent = 'Введите название задачи.';
+                    return;
+                }
+                try {
+                    const tasks = [{ title, description: fields.get('description').trim() }, ...loadTasks()];
+                    localStorage.setItem(key, JSON.stringify(tasks));
+                    form.reset();
+                    showTasks(tasks);
+                    history.open = true;
+                    status.textContent = 'Задача создана.';
+                } catch {
+                    status.textContent = 'Не удалось сохранить задачу в браузере.';
+                }
+            });
+        })();
+        </script>
     </body>
 </html>
