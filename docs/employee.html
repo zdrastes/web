@@ -3,114 +3,106 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'sha256-BGQnVdt55+LnRcDM0B1boTpT5Ualb5kEa92hXeJtdZQ='; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'sha256-BGQnVdt55+LnRcDM0B1boTpT5Ualb5kEa92hXeJtdZQ='; base-uri 'none'; form-action 'none'">
   <title>Рабочие графики · Портал L2</title>
-  <link rel="stylesheet" href="css/portal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <style>
-    [hidden]{display:none!important}
-    .schedule{padding:32px 0 60px}
-    .schedule h1{font-size:clamp(34px,6vw,62px);margin-bottom:12px}
-    .schedule .intro{margin-bottom:26px}
-    .tabs,.week-nav,.view-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .tabs{padding:5px;background:#eae3f4;border-radius:14px;width:fit-content;margin-bottom:18px}
-    button,select{font:inherit;color:inherit;border:1px solid #dcd1e9;background:white;border-radius:10px;padding:8px 12px}
-    button{cursor:pointer}
-    button:focus-visible,select:focus-visible,.table-wrap:focus-visible{outline:3px solid #7040c4;outline-offset:3px}
-    button:disabled{opacity:.55;cursor:default}
-    .tabs button{background:transparent;border-color:transparent;font-weight:650}
-    .tabs button[aria-pressed=true]{background:#30204b;color:white}
-    .calendar{background:#fff;border:1px solid #e2d9ef;border-radius:22px;padding:22px;box-shadow:0 14px 35px #3420520d}
-    .week-nav{padding-bottom:16px;border-bottom:1px solid #eee8f4}
-    .week-nav h2{flex:1;font-size:20px;margin:0;min-width:180px}
-    .week-nav button:not(:disabled):hover{background:#f2ebfb}
-    .view-head{justify-content:space-between;margin:18px 0 14px}
-    .view-head h3{margin:0;font-size:19px}
-    .person-select{display:flex;align-items:center;gap:8px}
-    .summary{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
-    .summary div{padding:10px 14px;border-radius:11px;background:#f5f1fa}
-    .summary strong{display:block;font-size:19px;color:#3d2266}
-    .summary span,.day-date{font-size:13px;color:#625774}
-    .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;list-style:none;margin:0;padding:0}
-    .day-card{position:relative;padding:10px 7px;border:1px solid #ebe4f3;border-radius:13px;background:#fff}
-    .current{background:#f8f2ff;border-color:#bb9ae5}
-    .day-name,.day-date{display:block;text-transform:capitalize}
-    .day-date{margin-top:3px}
-    .today-tag{display:block;font-size:11px;color:#5a318d;margin-top:4px}
-    .shift{display:grid;gap:4px;padding:7px;border-radius:8px;font-size:12px;line-height:1.25;background:#f0edf4;color:#504560}
-    .day-card .shift{margin-top:8px}
-    .shift span{white-space:nowrap}
-    .shift.early{background:#dff2e9;color:#154a35}
-    .shift.day{background:#e9dff8;color:#463166}
-    .shift.late{background:#fdebdc;color:#633715}
-    .table-wrap{overflow:auto;border:1px solid #e7def0;border-radius:12px}
-    table{border-collapse:collapse;width:100%;min-width:755px;text-align:left}
-    th,td{padding:9px 8px;border-bottom:1px solid #ebe5f0;vertical-align:top}
-    thead th{background:#f7f2fb}
-    tbody tr:last-child>*{border-bottom:none}
-    .person,thead th:first-child{position:sticky;left:0;background:#fff;min-width:134px;box-shadow:1px 0 #ebe5f0}
-    thead th:first-child{background:#f7f2fb}
-    .legend{margin:15px 0 0;color:#625774;font-size:13px;line-height:1.5}
-    @media(max-width:900px){.days{grid-template-columns:repeat(4,minmax(0,1fr))}}
-    @media(max-width:540px){.calendar{padding:12px}.days{grid-template-columns:repeat(2,minmax(0,1fr))}.week-nav h2{flex-basis:100%}.person-select{align-items:flex-start;flex-direction:column}}
-  
-    input{font:inherit;color:inherit;border:1px solid #dcd1e9;background:white;border-radius:10px;padding:8px 12px;max-width:100%}
-    .date-jump{display:flex;gap:5px;align-items:center;font-size:13px;color:#625774}
-    .shift-edit{padding:0;border:0;width:100%;text-align:left;background:transparent;display:block}
-    .shift-edit:hover .shift{outline:2px solid #9a79bd}
-    .shift.vacation{background:#fff0bf;color:#614715}
-    .entry-list{display:grid;gap:8px}
-    .entry{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px;border:1px solid #ebe4f3;border-radius:12px}
-    .entry strong,.entry span{display:block;overflow-wrap:anywhere}
-    .entry span,#editor-caption{color:#625774;font-size:14px}
-    .primary{background:#3d255e;color:white;border-color:#3d255e}
-    .danger{color:#a02139}
-    dialog{width:min(480px,calc(100% - 30px));border:1px solid #dcd1e9;border-radius:18px;padding:22px;color:#191527}
-    dialog::backdrop{background:#24193b80}
-    dialog h2{margin:0 0 8px;font-size:24px}
-    .editor-fields{display:grid;gap:12px}
-    .editor-fields label{display:grid;gap:5px;font-weight:600}
-    .editor-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
-    #editor-error{color:#a02139}
-    #status{color:#3d255e;font-weight:600}
-  
-:root{background:#edf3f2;color:#192c33}
-body{background:radial-gradient(ellipse at 100% 0%,#d7ece5,transparent 52%),#edf3f2}
-header.shell{min-height:64px;border-color:#244c4930}.logo .mark{background:#153f3b}.top-note,.back{color:#35625a}
-.schedule{padding-top:23px}.schedule .back{margin-bottom:15px;font-size:14px}
-.hero{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:1fr minmax(210px,30%);align-items:center;gap:20px;padding:clamp(22px,5vw,44px);margin-bottom:18px;background:linear-gradient(115deg,#122d37,#174943 78%,#245d50);color:#f5fffb;border-radius:26px}
-.hero::after{content:"";position:absolute;z-index:-1;inset:0;background:repeating-linear-gradient(114deg,transparent 0 24px,#ceffec12 25px 26px,transparent 27px 52px);mask-image:linear-gradient(90deg,transparent 30%,black)}
-.schedule .hero h1{font-size:clamp(34px,6.2vw,69px);line-height:1;letter-spacing:-.07em;margin:0 0 12px}
-.hero p{margin:0;color:#c0dfd6;line-height:1.45}.next{border-radius:15px;padding:16px;background:#e5f7ee;color:#173c35;box-shadow:0 10px 30px #05292152}
-.next h2{font-size:15px;margin:0 0 6px}.next p{color:#315c50;font-size:13px}.next strong{display:block;font-size:19px;margin:6px 0 2px}.next button{margin-top:11px;font-size:13px}
-.tabs{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#dceae6;margin-bottom:12px}.tabs button{min-height:42px}.tabs button[aria-pressed=true],.primary{background:#194741;color:white;border-color:#194741}
-.calendar{border-color:#d5e3df;box-shadow:0 16px 38px #113b3011}.week-nav,.day-card,.entry,.table-wrap{border-color:#dce9e4}
-.summary div{background:#e9f4f0;min-width:100px}.summary strong,#status{color:#22584c}
-.day-card.current,.current{background:#edf8f3;border-color:#73ae9c}.today-tag{color:#276553}
-.shift{border-left:3px solid #a49cae}.shift.early{border-left-color:#4d9b7e}.shift.day{border-left-color:#886bb4}.shift.late{border-left-color:#c9824d}.shift.vacation{border-left-color:#b68427}
-thead th,thead th:first-child{background:#eaf3ef}.person{z-index:1}
-.filters{display:flex;flex-wrap:wrap;gap:9px;padding:10px;margin-bottom:13px;border-radius:12px;background:#eef5f2}.filters label{display:grid;gap:5px;font-size:13px;color:#345e54}.filters select,.filters input{font-size:14px}
-@media(max-width:680px){.hero{grid-template-columns:1fr}.hero h1 br{display:none}.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
-
-:root{background:#f1f2f8;color:#21243a}
-body{background:radial-gradient(ellipse at 78% 0%,#eae4fb,transparent 48%),#f1f2f8}
-header.shell{border-color:#dedcec}.logo .mark{background:#533ba0}.top-note,.schedule .back{color:#5d5474}
-.welcome{display:flex;align-items:end;justify-content:space-between;gap:16px;margin:7px 0 24px}
-.welcome p{margin:0 0 7px;color:#625775}.schedule .welcome h1{margin:0;font-size:clamp(30px,5vw,53px);letter-spacing:-.055em;line-height:1.04}
-.dashboard{display:grid;grid-template-columns:minmax(0,1.28fr) minmax(0,.95fr) minmax(0,1fr);gap:14px;margin-bottom:30px}
-.dash-card{min-width:0;background:#fff;border:1px solid #e9e6f1;border-radius:22px;padding:18px;box-shadow:0 10px 26px #3927580b}
-.dash-card h2{margin:0;font-size:19px;letter-spacing:-.025em}.card-head{display:flex;justify-content:space-between;gap:8px;align-items:start;margin-bottom:13px}
-.card-head p{color:#625775;margin:4px 0 0;font-size:13px}.card-icon{display:grid;place-items:center;width:37px;height:37px;border-radius:12px;background:#ece5fc;color:#553893;font-size:21px;flex:none}
-.agenda{grid-row:span 2;display:flex;flex-direction:column}.agenda-nav{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px}.agenda-nav strong{margin:0 3px;font-size:14px}.agenda-nav button{padding:5px 8px;font-size:13px}
-#agenda-events{margin-bottom:12px;flex:1}.agenda-item{display:grid;grid-template-columns:70px 1fr;gap:8px;border-left:3px solid #aa8de5;border-radius:8px;background:#f5f0ff;padding:9px;margin-bottom:6px;font-size:14px}
-.agenda-item span{color:#574c6b}.agenda-empty{color:#625775;font-size:14px}
-.dashboard-link{display:inline-flex;align-items:center;text-decoration:none;font-size:14px;font-weight:650;color:#4c3584;padding:8px 11px;border-radius:10px;background:#eae3f8;width:fit-content}
-.dashboard-link:hover{background:#e1d5f4}
-.dash-card.next{background:linear-gradient(140deg,#e1d8fb,#fbecf1);color:#31264d}.dash-card.next p{color:#57466c}.dash-card.next button{background:#fff;border-color:#dbcee9}
-.shortcuts{grid-column:2}.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}.quick-grid button{text-align:left;font-size:13px;background:#f1edf9;border-color:#e8e0f1}.quick-grid span{float:right}.quick-grid button:hover{background:#e7daf7}
-.news{grid-column:3;grid-row:1/span 2}.news details{background:#f7f4fa;padding:10px;border-radius:10px;margin-bottom:7px}.news summary{cursor:pointer;font-weight:650;font-size:14px}.news details p{font-size:13px;line-height:1.45;color:#625775;margin:7px 0 0}
-#work-schedules{scroll-margin-top:12px;margin:0 0 11px}.tabs{background:#e7e1f2}.tabs button[aria-pressed=true],.primary{background:#523989;border-color:#523989}
-@media(max-width:900px){.dashboard{grid-template-columns:1fr 1fr}.agenda,.news{grid-row:auto;grid-column:auto}.shortcuts{grid-column:auto}}
-@media(max-width:600px){.dashboard{grid-template-columns:1fr}.welcome{align-items:start;flex-direction:column}.dashboard-link{font-size:13px}}
+:root{font-family:Inter,"Segoe UI",sans-serif;color:#1C1E21;background:#F3F5F8;font-size:14px;--muted:#7A828E;--control:#F0F2F5;--shadow:0 2px 12px rgba(16,24,40,.03)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;min-height:100vh}
+.shell{width:min(1232px,calc(100% - 48px));margin-inline:auto}
+header.shell{display:flex;align-items:center;justify-content:space-between;padding-block:18px;border-bottom:1px solid #e6eaf0}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;color:inherit;text-decoration:none}
+.mark{display:grid;place-items:center;width:36px;height:36px;background:#e9e5fb;color:#543e9a;border-radius:12px}
+.top-note,.legend,.welcome p,.card-head p,.entry span,.day-date,#editor-caption{color:var(--muted)}
+.schedule{padding:24px 0 48px}
+.back{display:inline-block;margin-bottom:17px;color:#545f70;text-decoration:none}
+.welcome{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:20px}
+.welcome p,.card-head p{margin:0 0 6px;font-size:13px}
+h1{margin:0;font-size:28px;font-weight:700;letter-spacing:-.04em;line-height:1.15}
+h2,h3,dialog h2{margin:0;font-size:18px;font-weight:600;letter-spacing:-.025em}
+.dashboard{display:grid;grid-template-columns:minmax(0,1.36fr) minmax(0,1fr) minmax(0,.92fr);grid-template-areas:"agenda next news" "agenda shortcuts news";grid-template-rows:minmax(160px,auto) minmax(180px,auto);gap:16px;margin-bottom:28px}
+.dash-card,.calendar,dialog,.tabs{background:#fff;border:0;border-radius:20px;box-shadow:var(--shadow)}
+.dash-card,.calendar{min-width:0;padding:20px}
+.agenda{grid-area:agenda;display:flex;flex-direction:column}
+.next{grid-area:next;position:relative;isolation:isolate;overflow:hidden;color:#fff;background:linear-gradient(122deg,#6a57ae,#6268b1 55%,#8a8ed1);display:flex;flex-direction:column;align-items:start}
+.shortcuts{grid-area:shortcuts}
+.news{grid-area:news}
+.card-head{display:flex;justify-content:space-between;align-items:start;gap:12px;margin-bottom:14px}
+.card-head p{margin:5px 0 0}
+.card-icon{width:36px;height:36px;flex:none}
+.next .card-head{margin-bottom:7px}
+.next .card-icon{position:absolute;z-index:-1;right:8px;top:4px;width:122px;height:110px;opacity:.82}
+.next p{margin:0;line-height:1.5}.next strong{display:block;font-size:19px;margin-block:5px}
+button,input,select,.dashboard-link{font:inherit;color:inherit;background:var(--control);border:0;border-radius:12px;padding:9px 12px;min-width:0}
+button,.dashboard-link{cursor:pointer;font-weight:600;transition:background-color .18s}
+button:hover:not(:disabled),.dashboard-link:hover{background:#e4e8ee}
+button:disabled{cursor:default;opacity:.55}
+:focus-visible{outline:2px solid #6b5ab5;outline-offset:3px}
+.dashboard-link{display:inline-block;text-decoration:none;text-align:center}
+.agenda>.dashboard-link,.next button{width:100%;margin-top:auto}
+.next button{color:#1C1E21;margin-top:13px}
+.agenda-nav,.week-nav,.view-head,.editor-actions,.date-jump{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.agenda-nav{margin-bottom:14px}
+.agenda-nav strong,.week-nav h2{flex:1}
+#agenda-events{flex:1;margin-bottom:14px}
+.agenda-item,.entry{background:#f7f8fb;border-radius:14px;padding:12px;line-height:1.4}
+.agenda-item{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:12px;margin-bottom:8px}
+.agenda-item span{color:#584490;font-size:13px}
+.agenda-empty{color:var(--muted)}
+.quick-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:13px}
+.quick-grid button{text-align:left;font-size:13px;min-height:47px}
+.quick-grid span{color:#68617a;float:right}
+.news details{border-top:1px solid #ebedf2;padding:14px 0}
+.news summary{cursor:pointer;font-weight:600;line-height:1.4}
+.news details p{margin:8px 0 0;color:#606978;font-size:13px;line-height:1.55}
+#work-schedules{scroll-margin-top:16px;margin-bottom:12px}
+.tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:8px;margin-bottom:16px}
+.tabs button[aria-pressed=true]{background:#e9e4f7;color:#473780}
+.week-nav{padding-bottom:14px;border-bottom:1px solid #eaedf2}
+.view-head{justify-content:space-between;margin:16px 0 13px}
+.person-select{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.summary div{background:#F0F2F5;border-radius:12px;padding:9px 13px}
+.summary strong{display:block;font-size:18px}
+.summary span,.day-date,.legend{font-size:13px}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;list-style:none;padding:0;margin:0}
+.day-card{background:#F3F5F8;padding:10px 8px;border-radius:14px;min-width:0}
+.current{background:#ebe7fa}
+.day-name,.day-date,.today-tag{display:block}
+.day-name,.day-date{text-transform:capitalize}.day-date{margin:3px 0}
+.today-tag{font-size:12px;color:#584490}
+.shift-edit{display:block;background:transparent;padding:0;width:100%;text-align:left;margin-top:6px}
+.shift-edit:hover:not(:disabled){background:#e4e8ee}
+.shift{display:grid;gap:3px;padding:7px;border-radius:10px;font-size:12px;background:#e9ecf1}
+.shift span{white-space:nowrap}
+.shift.early{background:#e1f2eb;color:#285543}
+.shift.day{background:#eae4fa;color:#4e3b78}
+.shift.late{background:#faebdf;color:#734324}
+.shift.vacation{background:#f8efda;color:#715619}
+.table-wrap{overflow:auto;border-radius:14px}
+table{width:100%;min-width:760px;border-collapse:separate;border-spacing:4px;text-align:left}
+th,td{padding:7px 5px;background:#f6f7fa;border-radius:9px;vertical-align:top}
+th.current,td.current{background:#ebe7fa}
+.person,thead th:first-child{position:sticky;left:0;z-index:1;background:#eef1f5;min-width:132px}
+.filters{display:flex;width:100%;gap:10px;flex-wrap:wrap;background:#F0F2F5;border-radius:14px;padding:12px;margin-bottom:12px}
+.filters label{display:grid;flex:1 1 155px;gap:4px;font-size:13px;color:#596575}
+.filters input,.filters select{background:#fff;width:100%;border-radius:14px;color:#1C1E21}
+.entry-list,.editor-fields{display:grid;gap:8px}
+.entry{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.entry strong,.entry span{display:block;overflow-wrap:anywhere}
+.legend{margin:14px 0 0;line-height:1.5}
+dialog{width:min(480px,calc(100% - 32px));padding:20px;color:#1C1E21}
+dialog::backdrop{background:#36415955}
+.editor-fields label{display:grid;gap:5px;font-weight:600}
+.editor-actions{justify-content:flex-end}
+.primary{background:#e9e4f7;color:#473780}
+.danger,#editor-error{color:#a02139}
+#status{font-weight:600;color:#514284}
+@media(max-width:960px){.dashboard{grid-template-columns:1fr 1fr;grid-template-areas:"agenda next" "agenda shortcuts" "news news";grid-template-rows:auto}.days{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:600px){.shell{width:calc(100% - 28px)}.dashboard{grid-template-columns:1fr;grid-template-areas:"agenda" "next" "shortcuts" "news"}.welcome{flex-direction:column;align-items:start}.days,.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card,.calendar{padding:15px}.week-nav h2{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){button,.dashboard-link{transition:none}}
 </style>
 </head>
 <body>
@@ -126,7 +118,7 @@ header.shell{border-color:#dedcec}.logo .mark{background:#533ba0}.top-note,.sche
     </section>
     <div class="dashboard">
       <section class="dash-card agenda" aria-labelledby="agenda-title">
-        <div class="card-head"><div><h2 id="agenda-title">Мои события</h2><p>Календарь Outlook · демо</p></div><span class="card-icon" aria-hidden="true">▦</span></div>
+        <div class="card-head"><div><h2 id="agenda-title">Мои события</h2><p>Календарь Outlook · демо</p></div><svg class="card-icon" viewBox="0 0 40 40" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="12" fill="#EEE8FC"/><rect x="11" y="12" width="18" height="17" rx="4" stroke="#7459B1" stroke-width="1.7"/><path d="M11 18h18m-13-7v4m8-4v4m-8 8h3m3 0h3" stroke="#7459B1" stroke-width="1.7" stroke-linecap="round"/></svg></div>
         <div class="agenda-nav" aria-label="Дата событий">
           <button id="agenda-prev" type="button" aria-label="Предыдущий день">←</button>
           <strong id="agenda-date" aria-live="polite"></strong>
@@ -137,7 +129,7 @@ header.shell{border-color:#dedcec}.logo .mark{background:#533ba0}.top-note,.sche
         <a class="dashboard-link" href="https://outlook.office.com/calendar/" target="_blank" rel="noopener noreferrer">Открыть Outlook ↗</a>
       </section>
       <section class="dash-card next" aria-labelledby="next-title">
-        <div class="card-head"><h2 id="next-title">Ближайшая смена</h2><span class="card-icon" aria-hidden="true">◷</span></div>
+        <div class="card-head"><h2 id="next-title">Ближайшая смена</h2><svg class="card-icon" viewBox="0 0 110 100" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="64" cy="54" r="38" fill="#CFCEF5" fill-opacity=".33"/><circle cx="64" cy="54" r="28" fill="#E3DFFA" fill-opacity=".75"/><path d="M64 36v18l11 7" stroke="#7060AE" stroke-width="3" stroke-linecap="round"/><path d="M26 24v10m-5-5h10m66 46v12m-6-6h12" stroke="#F0DEFA" stroke-width="2" stroke-linecap="round"/></svg></div>
         <p id="next-person"></p><strong id="next-date"></strong><p id="next-time"></p>
         <button type="button" id="open-next">Открыть смену ↗</button>
       </section>
@@ -151,7 +143,7 @@ header.shell{border-color:#dedcec}.logo .mark{background:#533ba0}.top-note,.sche
         </div>
       </section>
       <section class="dash-card news" aria-labelledby="news-title">
-        <div class="card-head"><div><h2 id="news-title">Новости команды</h2><p>Объявления демопортала</p></div><span class="card-icon" aria-hidden="true">✷</span></div>
+        <div class="card-head"><div><h2 id="news-title">Новости команды</h2><p>Объявления демопортала</p></div><svg class="card-icon" viewBox="0 0 40 40" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="12" fill="#FBEAF0"/><rect x="11" y="12" width="18" height="17" rx="4" stroke="#AA5F7D" stroke-width="1.7"/><path d="M15 17h10m-10 4h10m-10 4h6" stroke="#AA5F7D" stroke-width="1.7" stroke-linecap="round"/></svg></div>
         <details><summary>Графики собраны в одном месте</summary><p>Смены, отпуска и даты сдачи отчётов доступны в рабочих графиках.</p></details>
         <details><summary>Как договориться о подмене</summary><p>Нажмите на смену и выберите коллегу, свободного в этот день.</p></details>
       </section>
