@@ -62,12 +62,8 @@ const demoLoginButton = q('#ld-demo-login');
     }
 
     async function api(url, options) {
-        if (window.L2DemoApi) return window.L2DemoApi(url, options);
-        const response = await fetch(url, options);
-        if (response.status === 401) { showLogin(); throw Error('unauthorized'); }
-        const body = await response.json().catch(() => ({}));
-        if (!response.ok) throw Error(body.detail || ('HTTP ' + response.status));
-        return body;
+        if (!window.L2DemoApi) throw Error('Demo API unavailable');
+        return window.L2DemoApi(url, options);
     }
 
 function showLogin() {
@@ -151,44 +147,9 @@ if (demoLoginButton) demoLoginButton.hidden = !state.demoMode;
         }
     }
 
-logoutButton.addEventListener('click', async () => {
-// Полный выход: сначала локальная сессия, затем — страница выхода SSO,
-// чтобы SSO не впускал обратно без повторного ввода пароля.
-let target = '/';
-try {
-const body = await (await fetch('/auth/logout', { method: 'POST' })).json();
-if (body.logout_url) target = body.logout_url;
-} catch {}
-location.href = target;
-});
+    logoutButton.addEventListener('click', showLogin);
 
-if (demoLoginButton) {
-demoLoginButton.addEventListener('click', async () => {
-try { await fetch('/auth/demo-login', { method: 'POST' }); } catch { /* демо-вход недоступен */ }
-location.href = '/';
-});
-}
-
-    refreshButton.addEventListener('click', async () => {
-        const label = refreshButton.querySelector('span');
-        const previous = label.textContent;
-        refreshButton.disabled = true;
-        label.textContent = 'Обновляю…';
-        noteSyncFor('Обновление списка задач из трекера…');
-        try {
-            await api('/api/sync', { method: 'POST' });
-            const payload = await loadData();
-            if (payload && payload.stale)
-                noteSyncFor('Обновлено, но трекер недоступен: показан кэш от ' + formatDate(payload.generated_at));
-            else if (payload)
-                noteSyncFor('Список задач обновлён · ' + formatDate(new Date().toISOString()), 8);
-        } catch (error) {
-            if (error.message !== 'unauthorized') noteSyncFor('Обновить не удалось: ' + error.message);
-        } finally {
-            refreshButton.disabled = false;
-            label.textContent = previous;
-        }
-    });
+    demoLoginButton.addEventListener('click', init);
 
     function onReportRangeChange() {
         const from = dateFromInput.value;
@@ -932,22 +893,15 @@ location.href = '/';
         }
     });
 
-async function init() {
-let me;
-try {
-me = await api('/api/me');
-} catch {
-me = { username: null, is_admin: false };
-}
-state.demoMode = Boolean(me.demo_mode);
-if (me.demo_mode && !me.username) {
-try { await fetch('/auth/demo-login', { method: 'POST' }); } catch { /* демо-вход недоступен */ }
-me = await api('/api/me');
-}
-if (!me.username) { showLogin(); return; }
-showUser(me);
-await loadData();
-}
+    async function init() {
+        state.demoMode = true;
+        try {
+            showUser(await api('/api/me'));
+            await loadData();
+        } catch {
+            showLogin();
+        }
+    }
 
     init();
 })();

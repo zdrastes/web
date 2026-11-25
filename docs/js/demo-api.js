@@ -117,10 +117,51 @@
         return Promise.resolve(body);
     }
 
+    function reportFor(url) {
+        const params = new URLSearchParams(url.split('?')[1]);
+        const from = Date.parse(params.get('date_from'));
+        const to = Date.parse(params.get('date_to'));
+        if (!Number.isFinite(from) || !Number.isFinite(to) || from > to) return payload;
+
+        const day = 86400000;
+        const week = 7 * day;
+        const today = new Date();
+        const monday = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+            - ((today.getUTCDay() + 6) % 7) * day;
+        const first = monday - (dashboardData.weeks.length - 1) * week;
+        const indexes = dashboardData.weeks.flatMap((_, index) => {
+            const start = first + index * week;
+            return start <= to && start + 6 * day >= from ? [index] : [];
+        });
+        if (!indexes.length) throw Error('За эти даты нет демо-данных. Доступны последние 12 недель.');
+
+        const select = values => Array.isArray(values) ? indexes.map(index => values[index]) : values;
+        function trimSeries(series) {
+            const result = { ...series, counts: select(series.counts), rates: select(series.rates) };
+            for (const key of ['groups', 'reasons']) {
+                if (Array.isArray(series[key])) result[key] = series[key].map(trimSeries);
+            }
+            return result;
+        }
+        const dateLabel = timestamp => new Date(timestamp).toISOString().slice(5, 10).split('-').reverse().join('.');
+        return {
+            ...payload,
+            data: {
+                ...dashboardData,
+                weeks: indexes.map(index => {
+                    const start = first + index * week;
+                    return dateLabel(start) + '-' + dateLabel(start + 6 * day);
+                }),
+                default_weeks: dashboardData.weeks,
+                products: dashboardData.products.map(trimSeries),
+            },
+        };
+    }
+
     const routes = [
         // --- GET ---
         { method: 'GET', pattern: /^\/api\/me$/, handler: () => ok(DEMO_USER) },
-        { method: 'GET', pattern: /^\/api\/data/, handler: () => ok(Object.assign({}, payload)) },
+        { method: 'GET', pattern: /^\/api\/data$/, handler: url => Promise.resolve().then(() => reportFor(url)) },
         { method: 'GET', pattern: /^\/api\/settings$/, handler: () => ok(groupsPayload()) },
         { method: 'GET', pattern: /^\/api\/labels$/, handler: () => ok({ notes: state.labelNotes, defaults: state.notesDefaults }) },
         { method: 'GET', pattern: /^\/api\/sprints$/, handler: () => ok({ sprints: state.sprints }) },
@@ -263,7 +304,7 @@
     window.L2DemoApi = function (url, options) {
         const method = ((options && options.method) || 'GET').toUpperCase();
         for (const route of routes) {
-            if (route.method === method && route.pattern.test(url)) {
+            if (route.method === method && route.pattern.test(url.split('?')[0])) {
                 return route.handler(url, options);
             }
         }

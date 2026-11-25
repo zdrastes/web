@@ -638,8 +638,12 @@
     }
     );
     async function readAsset(path) {
+        if (!/^(?:css|js)\/(?:vendor\/)?[\w-]+\.(?:css|js)(?:\?v=[\w-]+)?$/.test(path)) {
+            throw Error('Invalid demo asset path');
+        }
         const response = await fetch(path, {
-            cache: 'no-store'
+            cache: 'no-store',
+            credentials: 'omit'
         });
         if (!response.ok)
             throw Error('Не удалось получить ' + path);
