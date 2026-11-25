@@ -55,6 +55,19 @@
     @media(max-width:780px){.bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"metrics distribution" "tasks tasks";grid-template-rows:auto}}
     @media(max-width:520px){.shell{width:calc(100% - 28px)}.bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"metrics" "tasks" "distribution"}.card{padding:16px}}
     @media(prefers-reduced-motion:reduce){.button{transition:none}}
+    button.status-label,button.task-tag{border:0;cursor:pointer;font-family:inherit}
+    button.status-label:hover,button.task-tag:hover{filter:brightness(.95)}
+    button.status-label:focus-visible,button.task-tag:focus-visible,#task-picker :focus-visible{outline:2px solid #765bb6;outline-offset:2px}
+    #task-picker{width:min(430px,calc(100% - 32px));max-height:85dvh;padding:18px;border:0;border-radius:20px;color:#1C1E21;background:white}
+    #task-picker::backdrop{background:#2b224553}
+    .picker-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+    #task-picker button{border:0;border-radius:10px;background:#F0F2F5;padding:8px 10px;font:inherit;color:inherit;cursor:pointer}
+    #task-picker button:hover{background:#e8e2f4}
+    #task-picker button[aria-pressed=true]{background:#e9e2fa;color:#4e3684;font-weight:650}
+    #picker-search-label{display:grid;gap:5px;margin-bottom:10px;font-size:13px}
+    #picker-search{width:100%;border:0;border-radius:12px;padding:9px 10px;background:#F0F2F5;color:inherit;font:inherit}
+    #picker-options{display:grid;gap:6px}#picker-options button{text-align:left}
+    #picker-message:empty{display:none}
   </style>
 </head>
 <body>
@@ -86,6 +99,13 @@
       </section>
     </div>
   </main>
+  <dialog id="task-picker" aria-labelledby="picker-title">
+    <div class="picker-head"><h2 id="picker-title"></h2><button type="button" id="picker-close">Закрыть</button></div>
+    <p id="picker-task" class="muted"></p>
+    <label id="picker-search-label" hidden>Поиск метки <input id="picker-search" type="search" autocomplete="off"></label>
+    <div id="picker-options"></div>
+    <p id="picker-message" class="muted" role="status"></p>
+  </dialog>
   <script>
     (() => {
       const $ = id => document.getElementById(id);
@@ -117,6 +137,78 @@
         if (stored && typeof stored === 'object' && !Array.isArray(stored)) saved = stored;
       } catch {}
       const getStatus = task => Object.hasOwn(labels, saved[task.id]) ? saved[task.id] : task.status;
+      const tagKey = 'zdrastes.web.demo.project-task-tags.v1';
+      const tags = [...new Set(tasks.map(task => task.tag))].sort(collator.compare);
+      let savedTags = {};
+      try {
+        const stored = JSON.parse(localStorage.getItem(tagKey));
+        if (stored && typeof stored === 'object' && !Array.isArray(stored)) savedTags = stored;
+      } catch {}
+      const getTag = task => tags.includes(savedTags[task.id]) ? savedTags[task.id] : task.tag;
+      const picker = $('task-picker');
+      const search = $('picker-search');
+      let editing;
+      function openPicker(task, field) {
+        editing = { task, field };
+        $('picker-title').textContent = field === 'tag' ? 'Выбрать метку' : 'Выбрать статус';
+        $('picker-task').textContent = task.id + ' · ' + task.title;
+        $('picker-search-label').hidden = field !== 'tag';
+        search.value = '';
+        renderOptions();
+        picker.showModal();
+        if (field === 'tag') search.focus();
+        else $('picker-options').querySelector('[aria-pressed="true"]')?.focus();
+      }
+      function renderOptions() {
+        const { task, field } = editing;
+        const query = search.value.trim().toLocaleLowerCase('ru');
+        const options = field === 'tag' ? tags.map(tag => [tag, tag]) : Object.entries(labels);
+        const selected = field === 'tag' ? getTag(task) : getStatus(task);
+        const matches = options.filter(([, title]) => title.toLocaleLowerCase('ru').includes(query));
+        $('picker-options').replaceChildren(...matches.map(([value, title]) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = title;
+          button.setAttribute('aria-pressed', String(value === selected));
+          button.addEventListener('click', () => saveChoice(value));
+          return button;
+        }));
+        $('picker-message').textContent = matches.length ? '' : 'Метки не найдены.';
+      }
+      function saveChoice(value) {
+        const { task, field } = editing;
+        const changingTag = field === 'tag';
+        const updated = { ...(changingTag ? savedTags : saved), [task.id]: value };
+        try {
+          localStorage.setItem(changingTag ? tagKey : storageKey, JSON.stringify(updated));
+        } catch {
+          $('picker-message').textContent = 'Не удалось сохранить изменение в браузере.';
+          return;
+        }
+        if (changingTag) savedTags = updated;
+        else saved = updated;
+        render();
+        renderChart();
+        picker.close();
+      }
+      function editButton(task, field, text, className) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = className;
+        button.textContent = text;
+        button.dataset.taskEdit = task.id;
+        button.dataset.field = field;
+        button.setAttribute('aria-haspopup', 'dialog');
+        button.setAttribute('aria-label', (field === 'tag' ? 'Изменить метку' : 'Изменить статус') + ' ' + task.id + ': ' + text);
+        button.addEventListener('click', () => openPicker(task, field));
+        return button;
+      }
+      $('picker-close').addEventListener('click', () => picker.close());
+      search.addEventListener('input', renderOptions);
+      picker.addEventListener('close', () => {
+        const { task, field } = editing;
+        document.querySelector('[data-task-edit="' + task.id + '"][data-field="' + field + '"]')?.focus({ preventScroll: true });
+      });
       function renderChart() {
         const counts = { open: 0, dev: 0, recalc: 0, fix: 0 };
         for (const item of tasks) counts[getStatus(item)] += 1;
@@ -145,7 +237,7 @@
      function render() {
         const matches = [...tasks].sort((a, b) => direction * (sortKey === 'status'
           ? order.indexOf(getStatus(a)) - order.indexOf(getStatus(b))
-          : collator.compare(a.tag, b.tag)));
+          : collator.compare(getTag(a), getTag(b))));
         for (const button of sortButtons) {
           const active = button.dataset.sort === sortKey;
           if (active) button.parentElement.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
@@ -163,16 +255,12 @@
           detail.textContent = item.id;
           label.append(detail);
           const status = document.createElement('td');
-          const badge = document.createElement('span');
           const value = getStatus(item);
-          badge.className = 'status-label';
+          const badge = editButton(item, 'status', labels[value], 'status-label');
           badge.dataset.status = value;
-          badge.textContent = labels[value];
           status.append(badge);
           const tagCell = document.createElement('td');
-          const tag = document.createElement('span');
-          tag.className = 'task-tag';
-          tag.textContent = item.tag;
+          const tag = editButton(item, 'tag', getTag(item), 'task-tag');
           tagCell.append(tag);
           const dateCell = document.createElement('td');
           dateCell.className = 'task-date';
