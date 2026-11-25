@@ -279,8 +279,9 @@
         });
         for (const button of sortButtons) {
           const active = button.dataset.sort === sortKey;
-          if (active) button.parentElement.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
-          else button.parentElement.removeAttribute('aria-sort');
+          const header = button.closest('th');
+          if (active) header.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
+          else header.removeAttribute('aria-sort');
           const field = button.dataset.sort;
           const column = { status: 'Статус', tag: 'Метка', date: 'Дата' }[field];
           button.querySelector('span').textContent = active ? (direction === 1 ? '↑' : '↓') : '↕';
