@@ -1,0 +1,40 @@
+.portal-signin[hidden] { display: none !important; }
+body:has(.portal-signin:not([hidden])) > header { visibility: hidden; }
+.portal-signin {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  overflow: auto;
+  background: #f6f6fa;
+  color: #292930;
+  font-family: system-ui, sans-serif;
+}
+.portal-signin-card {
+  box-sizing: border-box;
+  width: min(100%, 360px);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #e0e0eb;
+  border-radius: 14px;
+  background: #fff;
+}
+.portal-signin-card h1 { margin: 0; font-size: 18px; line-height: 1.35; }
+.portal-signin-card p { margin: 0; color: #747487; font-size: 13px; }
+.portal-signin-card button {
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid #7f30e3;
+  border-radius: 8px;
+  background: #7f30e3;
+  color: #fff;
+  font: 600 14px system-ui, sans-serif;
+  cursor: pointer;
+}
+.portal-signin-card button:hover { background: #6926bd; }
+.portal-signin-card button:focus-visible { outline: 2px solid #6926bd; outline-offset: 3px; }
