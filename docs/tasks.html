@@ -41,8 +41,10 @@
     .reason-table th,.reason-table td{padding:11px 8px;border-bottom:1px solid #F1F3F6}
     .reason-table th{font-size:13px;white-space:nowrap;color:#575e6b}
     .reason-table tbody th{color:#1C1E21;white-space:normal}
-    .status-select{max-width:100%;background:var(--status-bg);color:var(--status-text);border:0;border-radius:999px;font:inherit;font-size:12px;padding:7px 8px}
-    .status-select:focus-visible,.table-scroll:focus-visible{outline:2px solid #765bb6;outline-offset:-2px}
+    .status-label,.task-tag{display:inline-block;max-width:100%;border-radius:999px;font-size:12px;padding:5px 8px}
+    .status-label{background:var(--status-bg);color:var(--status-text)}
+    .task-tag{background:#F0F2F5;color:#4F596A}
+    .table-scroll:focus-visible{outline:2px solid #765bb6;outline-offset:-2px}
     [data-status="open"]{--status-accent:#8A75CC;--status-bg:#F0EBFA;--status-text:#563C8F}
     [data-status="dev"]{--status-accent:#6B92D6;--status-bg:#E9F0FC;--status-text:#285493}
     [data-status="recalc"]{--status-accent:#C99345;--status-bg:#FCF1DF;--status-text:#7D4D12}
@@ -74,15 +76,14 @@
       </section>
       <section class="card tasks" aria-labelledby="tasks-title">
         <h2 id="tasks-title">Список задач</h2>
-        <p class="muted">Тестовые задачи DEMO. Изменения статусов сохраняются в этом браузере.</p>
+        <p class="muted">Тестовые задачи DEMO.</p>
         <label class="search">Статус задач <select id="status-filter" disabled><option value="">Все статусы</option></select></label>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица задач проекта DEMO">
           <table class="reason-table" aria-labelledby="tasks-title">
-            <thead><tr><th scope="col">Задача</th><th scope="col">Исполнитель</th><th scope="col">Статус</th></tr></thead>
+            <thead><tr><th scope="col">Задача</th><th scope="col">Статус</th><th scope="col">Метка</th></tr></thead>
             <tbody id="reason-list"></tbody>
           </table>
         </div>
-        <p id="reason-status" class="muted" role="status" hidden></p>
         <p id="reason-empty" class="muted" role="status"></p>
       </section>
       <section class="card distribution" aria-labelledby="status-chart-title">
@@ -95,14 +96,14 @@
     (() => {
       const $ = id => document.getElementById(id);
       const tasks = [
-        { id: 'DEMO-101', title: 'Разобрать повторные обращения по интеграции', assignee: 'Анна Волкова', status: 'open' },
-        { id: 'DEMO-102', title: 'Исправить дублирование записей при повторной синхронизации', assignee: 'Илья Орлов', status: 'dev' },
-        { id: 'DEMO-103', title: 'Пересчитать итог по обращениям за неделю', assignee: 'Мария Соколова', status: 'recalc' },
-        { id: 'DEMO-104', title: 'Проверить исправление ошибки выгрузки отчёта', assignee: 'Денис Лебедев', status: 'fix' },
-        { id: 'DEMO-105', title: 'Уточнить сценарий ошибки доступа к проекту', assignee: 'Ольга Крылова', status: 'open' },
-        { id: 'DEMO-106', title: 'Убрать ошибку при переключении фильтра', assignee: 'Илья Орлов', status: 'dev' },
-        { id: 'DEMO-107', title: 'Сверить данные по закрытым обращениям', assignee: 'Анна Волкова', status: 'recalc' },
-        { id: 'DEMO-108', title: 'Проверить загрузку отчёта после обновления', assignee: 'Мария Соколова', status: 'fix' },
+        { id: 'DEMO-101', title: 'Разобрать повторные обращения по интеграции', tag: 'Интеграция', status: 'open' },
+        { id: 'DEMO-102', title: 'Исправить дублирование записей при повторной синхронизации', tag: 'Синхронизация', status: 'dev' },
+        { id: 'DEMO-103', title: 'Пересчитать итог по обращениям за неделю', tag: 'Отчётность', status: 'recalc' },
+        { id: 'DEMO-104', title: 'Проверить исправление ошибки выгрузки отчёта', tag: 'Выгрузка', status: 'fix' },
+        { id: 'DEMO-105', title: 'Уточнить сценарий ошибки доступа к проекту', tag: 'Доступ', status: 'open' },
+        { id: 'DEMO-106', title: 'Убрать ошибку при переключении фильтра', tag: 'Интерфейс', status: 'dev' },
+        { id: 'DEMO-107', title: 'Сверить данные по закрытым обращениям', tag: 'Данные', status: 'recalc' },
+        { id: 'DEMO-108', title: 'Проверить загрузку отчёта после обновления', tag: 'Отчётность', status: 'fix' },
       ];
       const labels = {
         open: 'Открытые',
@@ -145,25 +146,7 @@
           return row;
         }));
       }
-      function setStatus(item, select) {
-        const next = { ...saved, [item.id]: select.value };
-        const notice = $('reason-status');
-        try {
-          localStorage.setItem(storageKey, JSON.stringify(next));
-          saved = next;
-          select.dataset.status = select.value;
-          notice.hidden = true;
-          renderChart();
-          render();
-          const moved = Array.from($('reason-list').querySelectorAll('.status-select')).find(field => field.dataset.taskId === item.id);
-          (moved || filter).focus({ preventScroll: true });
-        } catch {
-          select.value = getStatus(item);
-          notice.textContent = 'Не удалось сохранить статус в этом браузере.';
-          notice.hidden = false;
-        }
-      }
-      function render() {
+     function render() {
         const matches = tasks.filter(item => !filter.value || getStatus(item) === filter.value)
           .sort((a, b) => order.indexOf(getStatus(a)) - order.indexOf(getStatus(b)));
         $('reason-list').replaceChildren(...matches.map(item => {
@@ -176,19 +159,19 @@
           detail.className = 'reason-detail';
           detail.textContent = item.id;
           label.append(detail);
-          const assignee = document.createElement('td');
-          assignee.textContent = item.assignee;
           const status = document.createElement('td');
-          const select = document.createElement('select');
-          select.className = 'status-select';
-          select.dataset.taskId = item.id;
-          select.setAttribute('aria-label', 'Статус: ' + item.id + ' · ' + item.title);
-          for (const [value, title] of Object.entries(labels)) select.add(new Option(title, value));
-          select.value = getStatus(item);
-          select.dataset.status = select.value;
-          select.addEventListener('change', () => setStatus(item, select));
-          status.append(select);
-          row.append(label, assignee, status);
+          const badge = document.createElement('span');
+          const value = getStatus(item);
+          badge.className = 'status-label';
+          badge.dataset.status = value;
+          badge.textContent = labels[value];
+          status.append(badge);
+          const tagCell = document.createElement('td');
+          const tag = document.createElement('span');
+          tag.className = 'task-tag';
+          tag.textContent = item.tag;
+          tagCell.append(tag);
+          row.append(label, status, tagCell);
           return row;
         }));
         $('reason-empty').textContent = matches.length ? '' : tasks.length
