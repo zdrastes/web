@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'sha256-FR2ar3Ag4biOVf9mGi2MXfiOz4QUxlre1NIZ0MoVDB8='; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'sha256-Gs7l2C1W8nbTOosVot8mqewNDxZmDuuD/5YIOei71I0='; base-uri 'none'; form-action 'none'">
   <title>Рабочие графики · Портал L2</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <style>
@@ -105,6 +105,8 @@ dialog::backdrop{background:#36415955}
 @media(max-width:960px){.dashboard{grid-template-columns:1fr 1fr;grid-template-areas:"agenda next" "agenda shortcuts" "news news";grid-template-rows:auto}.days{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:600px){.shell{width:calc(100% - 28px)}.dashboard{grid-template-columns:1fr;grid-template-areas:"agenda" "next" "shortcuts" "news"}.welcome{flex-direction:column;align-items:start}.days,.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-card,.calendar{padding:15px}.week-nav h2{flex-basis:100%}}
 @media(prefers-reduced-motion:reduce){button,.dashboard-link{transition:none}}
+.day-card.pending-day,td.pending-day{background:#fff3d8;box-shadow:inset 0 0 0 1px #e0b762}
+.pending-label{display:block;margin:6px 0 0;color:#734c0e;font-size:12px;font-weight:650;line-height:1.3}
 </style>
 </head>
 <body>
@@ -258,6 +260,7 @@ dialog::backdrop{background:#36415955}
   const key = 'zdrastes.web.l2-employee.v2';
   let data = {
     shifts: {},
+    requests: [],
     vacations: [{ id: 'vacation-demo', person: 1, start: relative(12), end: relative(16) }],
     reports: [
       { id: 'report-demo-1', person: 0, date: relative(2), title: 'Сводка по обращениям' },
@@ -268,6 +271,10 @@ dialog::backdrop{background:#36415955}
     const saved = JSON.parse(localStorage.getItem(key));
     if (saved?.shifts && Array.isArray(saved.vacations) && Array.isArray(saved.reports)) data = saved;
   } catch {}
+  data.requests ??= [];
+  const requestAt = (person, date) => data.requests.find(request =>
+    (request.from === person && request.fromDate === date) ||
+    (request.to === person && request.date === date));
   const shiftKey = (person, date) => person + '/' + date;
   const scheduled = (person, date) => data.shifts[shiftKey(person, date)] ??
     people[person].pattern[(parse(date).getUTCDay() + 6) % 7];
@@ -291,6 +298,15 @@ dialog::backdrop{background:#36415955}
     button.setAttribute('aria-label', people[person].name + ', ' + fullDate.format(parse(date)) + ': ' +
       shifts[type].label + '. Изменить смену');
     button.append(badge(type));
+    const request = requestAt(person, date);
+    if (request) {
+      const incoming = request.to === person;
+      button.classList.add('pending-shift');
+      button.append(element('span', 'pending-label', incoming
+        ? 'Ждём вашего подтверждения' : 'Ждём подтверждения от сотрудника'));
+      button.setAttribute('aria-label', button.getAttribute('aria-label') + '. ' +
+        (incoming ? 'Ждём вашего подтверждения' : 'Ждём подтверждения от сотрудника'));
+    }
     button.addEventListener('click', () => openEditor('shift', { person, date, type: scheduled(person, date) }));
     return button;
   }
@@ -321,6 +337,7 @@ dialog::backdrop{background:#36415955}
       const item = element('li', 'day-card' + (+date === +today ? ' current' : ''));
       item.append(element('strong', 'day-name', weekday.format(date)), element('span', 'day-date', dateNumber.format(date)));
       if (+date === +today) item.append(element('span', 'today-tag', 'Сегодня'));
+      if (requestAt(view.person, iso(date))) item.classList.add('pending-day');
       item.append(shiftButton(view.person, iso(date)));
       return item;
     }));
@@ -345,6 +362,7 @@ dialog::backdrop{background:#36415955}
       row.append(name);
       for (const date of dates) {
         const cell = element('td', +date === +today ? 'current' : '');
+        if (requestAt(index, iso(date))) cell.classList.add('pending-day');
         cell.append(shiftButton(index, iso(date)));
         row.append(cell);
       }
@@ -419,11 +437,29 @@ dialog::backdrop{background:#36415955}
     $('editor-fields').replaceChildren();
     $('editor-error').textContent = '';
     $('editor-caption').textContent = '';
+    $('editor-form').querySelector('[type="submit"]').hidden = false;
+    $('editor-remove').textContent = 'Удалить';
+    const request = kind === 'shift' ? requestAt(item.person, item.date) : null;
+    if (request) {
+      const incoming = request.to === item.person;
+      edit = { kind: 'request', request, incoming };
+      $('editor-title').textContent = incoming ? 'Входящая подмена' : 'Заявка на подмену';
+      $('editor-caption').textContent = people[request.from].name + ' → ' + people[request.to].name +
+        ' · ' + fullDate.format(parse(request.date)) + ' · ' + shifts[request.type].time;
+      $('editor-fields').append(element('p', 'pending-label', incoming
+        ? 'Ждём вашего подтверждения. Подтверждение пока недоступно в демо.'
+        : 'Ждём подтверждения от сотрудника. До подтверждения график не изменится.'));
+      $('editor-form').querySelector('[type="submit"]').hidden = true;
+      $('editor-remove').hidden = incoming;
+      $('editor-remove').textContent = 'Отменить заявку';
+      $('editor').showModal();
+      return;
+    }
     $('editor-remove').hidden = kind === 'shift' ? item.type === 'off' : !item.id;
     $('editor-title').textContent = kind === 'shift' ? (item.type === 'off' ? 'Назначить смену' : 'Изменить или передать смену')
       : kind === 'vacation' ? 'Отпуск сотрудника' : 'Отчёт сотрудника';
     if (kind === 'shift') {
-      $('editor-caption').textContent = 'При передаче коллега получит смену, а исходное назначение будет снято.';
+      $('editor-caption').textContent = 'При передаче создаётся заявка. До подтверждения назначение останется в графике.';
       const availableTypes = ['early', 'day', 'late'];
       field('type', 'Смена', item.type === 'off' ? 'day' : item.type, '', availableTypes.map(type => [type, shifts[type].label + ' · ' + shifts[type].time]));
       field('date', 'Дата смены', item.date, 'date');
@@ -442,6 +478,7 @@ dialog::backdrop{background:#36415955}
   $('editor-form').addEventListener('submit', event => {
     event.preventDefault();
     const { kind, item } = edit;
+    if (kind === 'request') return;
     const values = Object.fromEntries(new FormData(event.currentTarget));
     const person = Number(values.person);
     const fail = message => { $('editor-error').textContent = message; };
@@ -449,14 +486,21 @@ dialog::backdrop{background:#36415955}
       const source = shiftKey(item.person, item.date);
       const target = shiftKey(person, values.date);
       if (onVacation(person, values.date)) return fail('Сотрудник в отпуске в эту дату. Выберите другого коллегу или дату.');
+      if (person !== item.person && item.type !== 'off') {
+        if (requestAt(person, values.date)) return fail('На этот день у сотрудника уже есть заявка на подмену.');
+        const request = { from: item.person, fromDate: item.date, to: person, date: values.date, type: values.type };
+        view.week = Math.floor((+parse(values.date) - monday) / (7 * dayMs));
+        save({ ...data, requests: [...data.requests, request] },
+          'Заявка создана. Ждём подтверждения от сотрудника: ' + people[person].name + '.');
+        return;
+      }
       if (source !== target && scheduled(person, values.date) !== 'off') {
         return fail('На эту дату у сотрудника уже есть смена. Выберите другого коллегу или дату.');
       }
       const planned = { ...data.shifts, [target]: values.type };
       if (source !== target && item.type !== 'off') planned[source] = 'off';
       view.week = Math.floor((+parse(values.date) - monday) / (7 * dayMs));
-      save({ ...data, shifts: planned }, person !== item.person && item.type !== 'off'
-        ? 'Смена передана сотруднику: ' + people[person].name + '.' : 'Смена сохранена.');
+      save({ ...data, shifts: planned }, 'Смена сохранена.');
       return;
     }
     const id = item.id ?? (globalThis.crypto?.randomUUID?.() ?? String(Date.now()));
@@ -476,7 +520,11 @@ dialog::backdrop{background:#36415955}
     }
   });
   $('editor-remove').addEventListener('click', () => {
-    const { kind, item } = edit;
+    const { kind, item, request, incoming } = edit;
+    if (kind === 'request') {
+      if (!incoming) save({ ...data, requests: data.requests.filter(entry => entry !== request) }, 'Заявка отменена.');
+      return;
+    }
     if (kind === 'shift') {
       save({ ...data, shifts: { ...data.shifts, [shiftKey(item.person, item.date)]: 'off' } }, 'Смена снята.');
     } else {
