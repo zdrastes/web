@@ -3,22 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <title>Задачи команды · Портал L2</title>
   <link rel="stylesheet" href="css/portal.css">
   <style>
     .tasks-page{padding-top:38px}
     .tasks-page h1{font-size:clamp(32px,6vw,57px)}
-    .task-tools{display:flex;align-items:end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:24px 0 12px}
-    .task-tools label{display:grid;gap:6px;min-width:0;flex:1 1 220px;max-width:420px}
-    .task-tools input,.task-link{padding:11px 14px;border:1px solid #ded7eb;border-radius:12px;background:white;color:inherit;font:inherit}
-    .task-link{display:inline-flex;color:#513886;text-decoration:none;font-weight:650;background:#ece6fa}
-    #task-list{list-style:none;display:grid;gap:10px;margin:0;padding:0}
-    #task-list li,#task-empty{background:white;border:1px solid #e6e0ef;border-radius:18px;padding:16px;overflow-wrap:anywhere}
-    #task-list h2{margin:0;font-size:17px}
-    #task-list p{margin:6px 0 0;color:#5c526d;white-space:pre-wrap}
-    #task-count{color:#5c526d;font-size:14px;margin:0 0 9px}
-    @media(max-width:540px){.task-tools input{width:100%}.task-tools label{max-width:none}}
+    .construction{display:grid;justify-items:center;text-align:center;gap:16px;padding:clamp(28px,7vw,58px) 20px;background:#fff;border:1px solid #e6e0ef;border-radius:24px}
+    .construction h2{margin:0;font-size:clamp(20px,4vw,27px)}
+    .construction svg{width:80px;height:80px}
   </style>
 </head>
 <body>
@@ -29,58 +22,14 @@
   <main class="shell tasks-page">
     <a class="back" href="./">← На главную</a>
     <h1>Задачи команды</h1>
-    <p class="intro">Демозадачи, созданные в «Аналитике продуктов» в этом браузере.</p>
-    <div class="task-tools">
-      <label>Поиск задач <input id="task-search" type="search" placeholder="Название или описание"></label>
-      <a class="task-link" href="analytics.html">Открыть аналитику ↗</a>
-    </div>
-    <p id="task-count" aria-live="polite"></p>
-    <ul id="task-list"></ul>
-    <p id="task-empty" hidden></p>
-    <noscript>Включите JavaScript, чтобы посмотреть задачи.</noscript>
+    <section class="construction" aria-labelledby="construction-title">
+      <svg viewBox="0 0 80 80" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="80" height="80" rx="22" fill="#FFF2DC"/>
+        <path d="M20 63h40M26 59l11-36a3 3 0 0 1 6 0l11 36" stroke="#985B19" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M32 45h16M35 35h10M29 55h22" stroke="#DB922C" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+      <h2 id="construction-title">Раздел в разработке</h2>
+    </section>
   </main>
-  <script>
-    (() => {
-      const key = 'zdrastes.web.analytics.tasks.v1';
-      const search = document.getElementById('task-search');
-      const list = document.getElementById('task-list');
-      const empty = document.getElementById('task-empty');
-      const count = document.getElementById('task-count');
-      function render() {
-        list.replaceChildren();
-        count.textContent = '';
-        try {
-          const saved = JSON.parse(localStorage.getItem(key) || '[]');
-          const tasks = Array.isArray(saved) ? saved.filter(task => typeof task?.title === 'string') : [];
-          const query = search.value.trim().toLocaleLowerCase('ru');
-          const matches = tasks.filter(task => (task.title + ' ' + (task.description || '')).toLocaleLowerCase('ru').includes(query));
-          empty.hidden = matches.length > 0;
-          empty.textContent = tasks.length ? 'По запросу ничего не найдено.' : 'Задач пока нет. Создайте первую в «Аналитике продуктов».';
-          if (tasks.length) count.textContent = 'Показано ' + matches.length + ' из ' + tasks.length;
-          for (const task of matches) {
-            const item = document.createElement('li');
-            const title = document.createElement('h2');
-            title.textContent = task.title;
-            item.append(title);
-            if (task.description) {
-              const description = document.createElement('p');
-              description.textContent = task.description;
-              item.append(description);
-            }
-            list.append(item);
-          }
-        } catch {
-          empty.hidden = false;
-          empty.textContent = 'Не удалось прочитать задачи из хранилища браузера.';
-        }
-      }
-      search.addEventListener('input', render);
-      window.addEventListener('pageshow', render);
-      window.addEventListener('storage', event => {
-        if (event.key === key || event.key === null) render();
-      });
-      render();
-    })();
-  </script>
 </body>
 </html>
