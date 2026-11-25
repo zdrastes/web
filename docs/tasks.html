@@ -31,9 +31,9 @@
     .metrics dt,.source p{color:var(--muted);font-size:13px;line-height:1.5}.metrics dd{margin:0;font-weight:700;white-space:nowrap}
     .source p{margin:9px 0 12px}.source .button{margin-top:auto}
     .button{display:block;width:100%;border:0;border-radius:12px;background:var(--soft);color:#1C1E21;text-align:center;text-decoration:none;padding:10px 12px;font-weight:600;transition:background-color .18s}
-    .button:hover{background:#e4e8ed}a:focus-visible,input:focus-visible{outline:2px solid #765bb6;outline-offset:3px}
+    .button:hover{background:#e4e8ed}a:focus-visible,select:focus-visible{outline:2px solid #765bb6;outline-offset:3px}
     .search{display:grid;gap:5px;margin:12px 0;color:#5e6673;font-size:13px}
-    .search input{width:100%;border:0;border-radius:14px;padding:11px 12px;background:var(--soft);font:inherit;color:#1C1E21}
+    .search select{width:100%;border:0;border-radius:14px;padding:11px 12px;background:var(--soft);font:inherit;color:#1C1E21}
     .status-chart{display:grid;gap:8px;padding:12px;background:#F3F5F8;border-radius:14px;margin:14px 0}
     .status-chart h3{font-size:14px;margin:0 0 4px}
     .status-row{display:grid;grid-template-columns:minmax(128px,1.25fr) minmax(32px,1fr) 2ch;align-items:center;gap:7px;font-size:12px}
@@ -78,7 +78,7 @@
       <section class="card tasks" aria-labelledby="tasks-title">
         <h2 id="tasks-title">Предложения к разбору</h2>
         <p class="muted">Причины, по которым изменилось число обращений. Это предложения, без назначенных исполнителей.</p>
-        <label class="search">Поиск по причинам <input type="search" id="reason-search" placeholder="Название причины" disabled></label>
+        <label class="search">Статус задач <select id="status-filter" disabled><option value="">Все статусы</option></select></label>
         <section class="status-chart" aria-labelledby="status-chart-title">
           <h3 id="status-chart-title">Задачи по статусам</h3>
           <div id="reason-chart" class="status-chart" style="margin:0;padding:0" aria-live="polite"></div>
@@ -116,6 +116,9 @@
         recalc: 'Перерасчёт',
         fix: 'Ожидаем фикс',
       };
+      const filter = $('status-filter');
+      const order = Object.keys(labels);
+      for (const value of order) filter.add(new Option(labels[value], value));
       const storageKey = 'zdrastes.web.demo.reason-statuses.v1';
       let saved = {};
       try {
@@ -154,6 +157,9 @@
           select.dataset.status = select.value;
           notice.hidden = true;
           renderChart();
+          render();
+          const moved = Array.from($('reason-list').querySelectorAll('.status-select')).find(field => field.dataset.taskId === item.id);
+          (moved || filter).focus({ preventScroll: true });
         } catch {
           select.value = getStatus(item.id);
           notice.textContent = 'Не удалось сохранить статус в этом браузере.';
@@ -161,8 +167,8 @@
         }
       }
       function render() {
-        const query = $('reason-search').value.trim().toLocaleLowerCase('ru');
-        const matches = reasons.filter(item => (item.title + ' ' + item.group).toLocaleLowerCase('ru').includes(query));
+        const matches = reasons.filter(item => !filter.value || getStatus(item.id) === filter.value)
+          .sort((a, b) => order.indexOf(getStatus(a.id)) - order.indexOf(getStatus(b.id)));
         $('reason-list').replaceChildren(...matches.map(item => {
           const row = document.createElement('tr');
           const label = document.createElement('th');
@@ -183,6 +189,7 @@
           const status = document.createElement('td');
           const select = document.createElement('select');
           select.className = 'status-select';
+          select.dataset.taskId = item.id;
           select.setAttribute('aria-label', 'Статус: ' + item.title + ' · ' + item.group);
           for (const [value, title] of Object.entries(labels)) select.add(new Option(title, value));
           select.value = getStatus(item.id);
@@ -193,7 +200,7 @@
           return row;
         }));
         $('reason-empty').textContent = matches.length ? '' : reasons.length
-          ? 'По запросу ничего не найдено.' : 'За выбранный период нет изменений по причинам или данных для сравнения.';
+          ? 'В этом статусе задач нет.' : 'За выбранный период нет изменений по причинам или данных для сравнения.';
       }
       async function init() {
         try {
@@ -226,14 +233,14 @@
             }
           }
           reasons.sort((a, b) => Math.abs(b.change) - Math.abs(a.change) || a.title.localeCompare(b.title, 'ru'));
-          $('reason-search').disabled = !reasons.length;
+          filter.disabled = !reasons.length;
           renderChart();
           render();
         } catch {
           $('week-context').textContent = 'Не удалось загрузить демоотчёт.';
         }
       }
-      $('reason-search').addEventListener('input', render);
+      filter.addEventListener('change', render);
       init();
     })();
   </script>
