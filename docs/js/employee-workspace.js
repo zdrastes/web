@@ -476,6 +476,17 @@
       bell.focus();
     }
   });
+  const help = $('workspace-help');
+  if (help) {
+    help.addEventListener('click', event => {
+      const shortcut = event.target.closest('[data-help-section]');
+      if (!shortcut) return;
+      view.page = shortcut.dataset.helpSection;
+      help.close();
+      render();
+      requestAnimationFrame(() => $('work-schedules').focus());
+    });
+  }
   renderAgenda();
   render();
 })();
