@@ -26,8 +26,6 @@
     .metrics dl{display:grid;gap:7px;margin:14px 0 0}
     .metrics dl div{display:flex;justify-content:space-between;gap:10px;padding-bottom:7px;border-bottom:1px solid #f0f2f5}
     .metrics dt{color:var(--muted);font-size:13px;line-height:1.5}.metrics dd{margin:0;font-weight:700;white-space:nowrap}
-    .search{display:grid;gap:5px;margin:12px 0;color:#5e6673;font-size:13px}
-    .search select{width:100%;border:0;border-radius:14px;padding:11px 12px;background:var(--soft);font:inherit;color:#1C1E21}
     .status-chart{display:grid;gap:6px;margin:9px 0 0}
     .status-row{display:grid;grid-template-columns:minmax(122px,1.8fr) minmax(25px,1fr) 2ch;align-items:center;gap:7px;font-size:12px}
     .status-track{height:6px;border-radius:999px;background:#e7eaf0;overflow:hidden}
@@ -35,6 +33,10 @@
     .table-scroll{max-width:100%;overflow-x:auto}
     .reason-table{width:100%;min-width:530px;border-collapse:collapse;text-align:left}
     .reason-table th,.reason-table td{padding:11px 8px;border-bottom:1px solid #F1F3F6}
+    .sort-column{display:inline-flex;align-items:center;gap:5px;padding:4px 0;background:none;color:inherit;border:0;font:inherit;font-weight:650;cursor:pointer}
+    .sort-column span{color:#765bb6}
+    .sort-column:hover{color:#513886}
+    .sort-column:focus-visible{outline:2px solid #765bb6;outline-offset:3px}
     .reason-table th{font-size:13px;white-space:nowrap;color:#575e6b}
     .reason-table tbody th{color:#1C1E21;white-space:normal}
     .status-label,.task-tag{display:inline-block;max-width:100%;border-radius:999px;font-size:12px;padding:5px 8px}
@@ -70,10 +72,9 @@
       <section class="card tasks" aria-labelledby="tasks-title">
         <h2 id="tasks-title">Список задач</h2>
         <p class="muted">Тестовые задачи DEMO.</p>
-        <label class="search">Статус задач <select id="status-filter" disabled><option value="">Все статусы</option></select></label>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица задач проекта DEMO">
           <table class="reason-table" aria-labelledby="tasks-title">
-            <thead><tr><th scope="col">Задача</th><th scope="col">Статус</th><th scope="col">Метка</th><th scope="col" title="Дата создания">Дата</th></tr></thead>
+            <thead><tr><th scope="col">Задача</th><th scope="col" aria-sort="ascending"><button class="sort-column" type="button" data-sort="status">Статус <span aria-hidden="true">↑</span></button></th><th scope="col"><button class="sort-column" type="button" data-sort="tag">Метка <span aria-hidden="true">↕</span></button></th><th scope="col" title="Дата создания">Дата</th></tr></thead>
             <tbody id="reason-list"></tbody>
           </table>
         </div>
@@ -104,9 +105,11 @@
         recalc: 'Перерасчёт',
         fix: 'Ожидаем фикс',
       };
-      const filter = $('status-filter');
       const order = Object.keys(labels);
-      for (const value of order) filter.add(new Option(labels[value], value));
+      const collator = new Intl.Collator('ru');
+      const sortButtons = document.querySelectorAll('.sort-column');
+      let sortKey = 'status';
+      let direction = 1;
       const storageKey = 'zdrastes.web.demo.project-tasks.v1';
       let saved = {};
       try {
@@ -140,8 +143,15 @@
         }));
       }
      function render() {
-        const matches = tasks.filter(item => !filter.value || getStatus(item) === filter.value)
-          .sort((a, b) => order.indexOf(getStatus(a)) - order.indexOf(getStatus(b)));
+        const matches = [...tasks].sort((a, b) => direction * (sortKey === 'status'
+          ? order.indexOf(getStatus(a)) - order.indexOf(getStatus(b))
+          : collator.compare(a.tag, b.tag)));
+        for (const button of sortButtons) {
+          const active = button.dataset.sort === sortKey;
+          if (active) button.parentElement.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
+          else button.parentElement.removeAttribute('aria-sort');
+          button.querySelector('span').textContent = active ? (direction === 1 ? '↑' : '↓') : '↕';
+        }
         $('reason-list').replaceChildren(...matches.map(item => {
           const row = document.createElement('tr');
           const label = document.createElement('th');
@@ -173,11 +183,16 @@
           row.append(label, status, tagCell, dateCell);
           return row;
         }));
-        $('reason-empty').textContent = matches.length ? '' : tasks.length
-          ? 'В этом статусе задач нет.' : 'В проекте пока нет задач.';
+        $('reason-empty').textContent = matches.length ? '' : 'В проекте пока нет задач.';
       }
-      filter.disabled = !tasks.length;
-      filter.addEventListener('change', render);
+      for (const button of sortButtons) {
+        button.addEventListener('click', () => {
+          const nextKey = button.dataset.sort;
+          direction = sortKey === nextKey ? -direction : 1;
+          sortKey = nextKey;
+          render();
+        });
+      }
       renderChart();
       render();
     })();
