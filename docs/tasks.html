@@ -34,8 +34,22 @@
     .button:hover{background:#e4e8ed}a:focus-visible,input:focus-visible{outline:2px solid #765bb6;outline-offset:3px}
     .search{display:grid;gap:5px;margin:12px 0;color:#5e6673;font-size:13px}
     .search input{width:100%;border:0;border-radius:14px;padding:11px 12px;background:var(--soft);font:inherit;color:#1C1E21}
-    #reason-list{list-style:none;margin:0;padding:0}
-    #reason-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:12px 0;border-top:1px solid #eef0f4}
+    .status-chart{display:grid;gap:8px;padding:12px;background:#F3F5F8;border-radius:14px;margin:14px 0}
+    .status-chart h3{font-size:14px;margin:0 0 4px}
+    .status-row{display:grid;grid-template-columns:minmax(128px,1.25fr) minmax(32px,1fr) 2ch;align-items:center;gap:7px;font-size:12px}
+    .status-track{height:8px;border-radius:999px;background:#e7eaf0;overflow:hidden}
+    .status-fill{height:100%;border-radius:inherit;background:var(--status-accent)}
+    .table-scroll{max-width:100%;overflow-x:auto}
+    .reason-table{width:100%;min-width:530px;border-collapse:collapse;text-align:left}
+    .reason-table th,.reason-table td{padding:11px 8px;border-bottom:1px solid #F1F3F6}
+    .reason-table th{font-size:13px;white-space:nowrap;color:#575e6b}
+    .reason-table tbody th{color:#1C1E21;white-space:normal}
+    .status-select{max-width:100%;background:var(--status-bg);color:var(--status-text);border:0;border-radius:999px;font:inherit;font-size:12px;padding:7px 8px}
+    .status-select:focus-visible,.table-scroll:focus-visible{outline:2px solid #765bb6;outline-offset:-2px}
+    [data-status="open"]{--status-accent:#8A75CC;--status-bg:#F0EBFA;--status-text:#563C8F}
+    [data-status="dev"]{--status-accent:#6B92D6;--status-bg:#E9F0FC;--status-text:#285493}
+    [data-status="recalc"]{--status-accent:#C99345;--status-bg:#FCF1DF;--status-text:#7D4D12}
+    [data-status="fix"]{--status-accent:#52A487;--status-bg:#E7F6EF;--status-text:#21664D}
     .reason-name{overflow-wrap:anywhere;font-weight:600}.reason-detail{display:block;color:#686f7c;font-size:13px;margin-top:4px}
     .delta{font-size:12px;white-space:nowrap;border-radius:999px;padding:5px 8px;background:#f0ebfa;color:#5c418f}
     .delta.up{background:#fbeee9;color:#9e4c28}.delta.down{background:#e7f6ef;color:#21664d}
@@ -65,7 +79,17 @@
         <h2 id="tasks-title">Предложения к разбору</h2>
         <p class="muted">Причины, по которым изменилось число обращений. Это предложения, без назначенных исполнителей.</p>
         <label class="search">Поиск по причинам <input type="search" id="reason-search" placeholder="Название причины" disabled></label>
-        <ul id="reason-list"></ul>
+        <section class="status-chart" aria-labelledby="status-chart-title">
+          <h3 id="status-chart-title">Задачи по статусам</h3>
+          <div id="reason-chart" class="status-chart" style="margin:0;padding:0" aria-live="polite"></div>
+        </section>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица предложений к разбору">
+          <table class="reason-table" aria-labelledby="tasks-title">
+            <thead><tr><th scope="col">Причина</th><th scope="col">Обращения</th><th scope="col">Изменение</th><th scope="col">Статус</th></tr></thead>
+            <tbody id="reason-list"></tbody>
+          </table>
+        </div>
+        <p id="reason-status" class="muted" role="status" hidden></p>
         <p id="reason-empty" class="muted" role="status"></p>
       </section>
       <section class="card source" aria-labelledby="source-title">
@@ -86,22 +110,86 @@
       const signed = new Intl.NumberFormat('ru-RU', { signDisplay: 'exceptZero' });
       const compact = value => Number.isFinite(value) ? number.format(value) : '—';
       const reasons = [];
+      const labels = {
+        open: 'Открытые',
+        dev: 'Передано в разработку',
+        recalc: 'Перерасчёт',
+        fix: 'Ожидаем фикс',
+      };
+      const storageKey = 'zdrastes.web.demo.reason-statuses.v1';
+      let saved = {};
+      try {
+        const stored = JSON.parse(localStorage.getItem(storageKey));
+        if (stored && typeof stored === 'object' && !Array.isArray(stored)) saved = stored;
+      } catch {}
+      const getStatus = id => Object.hasOwn(labels, saved[id]) ? saved[id] : 'open';
+      function renderChart() {
+        const counts = { open: 0, dev: 0, recalc: 0, fix: 0 };
+        for (const item of reasons) counts[getStatus(item.id)] += 1;
+        $('reason-chart').replaceChildren(...Object.entries(labels).map(([value, label]) => {
+          const row = document.createElement('div');
+          row.className = 'status-row';
+          row.dataset.status = value;
+          const title = document.createElement('span');
+          title.textContent = label;
+          const track = document.createElement('div');
+          track.className = 'status-track';
+          track.setAttribute('aria-hidden', 'true');
+          const fill = document.createElement('div');
+          fill.className = 'status-fill';
+          fill.style.width = (reasons.length ? 100 * counts[value] / reasons.length : 0) + '%';
+          track.append(fill);
+          const count = document.createElement('strong');
+          count.textContent = counts[value];
+          row.append(title, track, count);
+          return row;
+        }));
+      }
+      function setStatus(item, select) {
+        const next = { ...saved, [item.id]: select.value };
+        const notice = $('reason-status');
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(next));
+          saved = next;
+          select.dataset.status = select.value;
+          notice.hidden = true;
+          renderChart();
+        } catch {
+          select.value = getStatus(item.id);
+          notice.textContent = 'Не удалось сохранить статус в этом браузере.';
+          notice.hidden = false;
+        }
+      }
       function render() {
         const query = $('reason-search').value.trim().toLocaleLowerCase('ru');
         const matches = reasons.filter(item => (item.title + ' ' + item.group).toLocaleLowerCase('ru').includes(query));
         $('reason-list').replaceChildren(...matches.map(item => {
-          const row = document.createElement('li');
-          const label = document.createElement('div');
+          const row = document.createElement('tr');
+          const label = document.createElement('th');
+          label.scope = 'row';
           label.className = 'reason-name';
           label.textContent = item.title;
           const detail = document.createElement('span');
           detail.className = 'reason-detail';
-          detail.textContent = item.group + ' · ' + compact(item.before) + ' → ' + compact(item.now);
+          detail.textContent = item.group;
           label.append(detail);
-          const change = document.createElement('span');
-          change.className = 'delta ' + (item.change > 0 ? 'up' : 'down');
-          change.textContent = signed.format(item.change) + ' обр.';
-          row.append(label, change);
+          const counts = document.createElement('td');
+          counts.textContent = compact(item.before) + ' → ' + compact(item.now);
+          const change = document.createElement('td');
+          const badge = document.createElement('span');
+          badge.className = 'delta ' + (item.change > 0 ? 'up' : 'down');
+          badge.textContent = signed.format(item.change) + ' обр.';
+          change.append(badge);
+          const status = document.createElement('td');
+          const select = document.createElement('select');
+          select.className = 'status-select';
+          select.setAttribute('aria-label', 'Статус: ' + item.title + ' · ' + item.group);
+          for (const [value, title] of Object.entries(labels)) select.add(new Option(title, value));
+          select.value = getStatus(item.id);
+          select.dataset.status = select.value;
+          select.addEventListener('change', () => setStatus(item, select));
+          status.append(select);
+          row.append(label, counts, change, status);
           return row;
         }));
         $('reason-empty').textContent = matches.length ? '' : reasons.length
@@ -131,13 +219,15 @@
               const current = reason.counts[i];
               const previous = reason.counts[i - 1];
               if (Number.isFinite(current) && Number.isFinite(previous) && current !== previous) {
-                reasons.push({ title: data.label_notes?.[reason.name] || reason.name, group: group.name,
+                reasons.push({ id: JSON.stringify([project.name, data.weeks[i], group.name, reason.name]),
+                  title: data.label_notes?.[reason.name] || reason.name, group: group.name,
                   now: current, before: previous, change: current - previous });
               }
             }
           }
           reasons.sort((a, b) => Math.abs(b.change) - Math.abs(a.change) || a.title.localeCompare(b.title, 'ru'));
           $('reason-search').disabled = !reasons.length;
+          renderChart();
           render();
         } catch {
           $('week-context').textContent = 'Не удалось загрузить демоотчёт.';
