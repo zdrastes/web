@@ -3,33 +3,149 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <title>Задачи команды · Портал L2</title>
-  <link rel="stylesheet" href="css/portal.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
   <style>
-    .tasks-page{padding-top:38px}
-    .tasks-page h1{font-size:clamp(32px,6vw,57px)}
-    .construction{display:grid;justify-items:center;text-align:center;gap:16px;padding:clamp(28px,7vw,58px) 20px;background:#fff;border:1px solid #e6e0ef;border-radius:24px}
-    .construction h2{margin:0;font-size:clamp(20px,4vw,27px)}
-    .construction svg{width:80px;height:80px}
+    :root{font:14px Inter,system-ui,sans-serif;color:#1C1E21;background:#F3F5F8;--muted:#7A828E;--soft:#F0F2F5}
+    *{box-sizing:border-box}[hidden]{display:none!important}body{margin:0}
+    .shell{width:min(1120px,calc(100% - 48px));margin-inline:auto}
+    header{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid #e4e8ed}
+    header a,.back{color:inherit;text-decoration:none;font-weight:600}header a{display:flex;align-items:center;gap:10px}
+    .mark{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#eae4fb;color:#563c99}
+    header span:last-child,.muted{color:var(--muted);font-size:13px}
+    main{padding:24px 0 48px}.back{display:inline-block;margin-bottom:16px;color:#54447d}
+    h1{font-size:28px;font-weight:700;margin:0 0 6px;letter-spacing:-.035em}
+    h2{font-size:18px;font-weight:600;margin:0;letter-spacing:-.022em}
+    .subtitle{margin:0 0 20px}
+    .bento{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1fr);grid-template-areas:"hero hero metrics" "tasks tasks source";grid-template-rows:minmax(175px,auto) minmax(240px,auto);gap:16px}
+    .card{position:relative;min-width:0;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 12px rgba(16,24,40,.03);padding:20px}
+    .hero{grid-area:hero;overflow:hidden;isolation:isolate;background:linear-gradient(120deg,#7354b2,#686bc2 60%,#868bd1);color:#fff;display:flex;flex-direction:column;justify-content:center}
+    .hero p{margin:8px 0 0;max-width:75%;line-height:1.45;color:#fff}
+    .hero h2{font-size:24px}.hero svg{position:absolute;right:8px;bottom:0;width:145px;z-index:-1;opacity:.65}
+    .metrics{grid-area:metrics}.source{grid-area:source;display:flex;flex-direction:column;align-items:stretch}
+    .tasks{grid-area:tasks}.card-icon{position:absolute;right:14px;top:14px;width:34px;height:34px}
+    .source h2,.metrics h2{padding-right:34px}
+    .metrics dl{display:grid;gap:7px;margin:14px 0 0}
+    .metrics dl div{display:flex;justify-content:space-between;gap:10px;padding-bottom:7px;border-bottom:1px solid #f0f2f5}
+    .metrics dt,.source p{color:var(--muted);font-size:13px;line-height:1.5}.metrics dd{margin:0;font-weight:700;white-space:nowrap}
+    .source p{margin:9px 0 12px}.source .button{margin-top:auto}
+    .button{display:block;width:100%;border:0;border-radius:12px;background:var(--soft);color:#1C1E21;text-align:center;text-decoration:none;padding:10px 12px;font-weight:600;transition:background-color .18s}
+    .button:hover{background:#e4e8ed}a:focus-visible,input:focus-visible{outline:2px solid #765bb6;outline-offset:3px}
+    .search{display:grid;gap:5px;margin:12px 0;color:#5e6673;font-size:13px}
+    .search input{width:100%;border:0;border-radius:14px;padding:11px 12px;background:var(--soft);font:inherit;color:#1C1E21}
+    #reason-list{list-style:none;margin:0;padding:0}
+    #reason-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;padding:12px 0;border-top:1px solid #eef0f4}
+    .reason-name{overflow-wrap:anywhere;font-weight:600}.reason-detail{display:block;color:#686f7c;font-size:13px;margin-top:4px}
+    .delta{font-size:12px;white-space:nowrap;border-radius:999px;padding:5px 8px;background:#f0ebfa;color:#5c418f}
+    .delta.up{background:#fbeee9;color:#9e4c28}.delta.down{background:#e7f6ef;color:#21664d}
+    @media(max-width:780px){.bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"hero metrics" "tasks tasks" "source source";grid-template-rows:auto}}
+    @media(max-width:520px){.shell{width:calc(100% - 28px)}.bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "metrics" "tasks" "source"}.hero{min-height:145px}.hero svg{width:105px}.card{padding:16px}}
+    @media(prefers-reduced-motion:reduce){.button{transition:none}}
   </style>
 </head>
 <body>
-  <header class="shell">
-    <a class="logo" href="./"><span class="mark">L2</span> Портал L2</a>
-    <span class="top-note">Демо-версия</span>
-  </header>
-  <main class="shell tasks-page">
+  <header class="shell"><a href="./"><span class="mark">L2</span> Портал L2</a><span>Демо-версия</span></header>
+  <main class="shell">
     <a class="back" href="./">← На главную</a>
     <h1>Задачи команды</h1>
-    <section class="construction" aria-labelledby="construction-title">
-      <svg viewBox="0 0 80 80" aria-hidden="true" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="80" height="80" rx="22" fill="#FFF2DC"/>
-        <path d="M20 63h40M26 59l11-36a3 3 0 0 1 6 0l11 36" stroke="#985B19" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M32 45h16M35 35h10M29 55h22" stroke="#DB922C" stroke-width="4" stroke-linecap="round"/>
-      </svg>
-      <h2 id="construction-title">Раздел в разработке</h2>
-    </section>
+    <p class="subtitle muted">Проект DEMO · синтетические данные</p>
+    <div class="bento">
+      <section class="card hero" aria-labelledby="hero-title">
+        <h2 id="hero-title">Разбор обращений DEMO</h2>
+        <p id="week-context" role="status">Загружаем отчёт…</p>
+        <svg viewBox="0 0 140 112" fill="none" aria-hidden="true"><circle cx="93" cy="65" r="43" fill="#D6CBFC" fill-opacity=".44"/><rect x="38" y="18" width="64" height="78" rx="13" fill="#E5DDFE"/><path d="M53 43l5 5 9-10m-14 22 5 5 9-10M75 44h12M75 61h12M54 77h33" stroke="#6B57AA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </section>
+      <section class="card metrics" aria-labelledby="metrics-title">
+        <h2 id="metrics-title">Обращения за неделю</h2>
+        <svg class="card-icon" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="11" fill="#EFEAFC"/><path d="M11 24v-5m7 5V12m7 12v-8" stroke="#7961B2" stroke-width="2.2" stroke-linecap="round"/></svg>
+        <dl><div><dt id="current-label">Текущая неделя</dt><dd id="current-count">—</dd></div><div><dt id="prior-label">Предыдущая неделя</dt><dd id="prior-count">—</dd></div><div><dt>Изменение</dt><dd id="project-delta">—</dd></div></dl>
+      </section>
+      <section class="card tasks" aria-labelledby="tasks-title">
+        <h2 id="tasks-title">Предложения к разбору</h2>
+        <p class="muted">Причины, по которым изменилось число обращений. Это предложения, без назначенных исполнителей.</p>
+        <label class="search">Поиск по причинам <input type="search" id="reason-search" placeholder="Название причины" disabled></label>
+        <ul id="reason-list"></ul>
+        <p id="reason-empty" class="muted" role="status"></p>
+      </section>
+      <section class="card source" aria-labelledby="source-title">
+        <h2 id="source-title">Источник данных</h2>
+        <svg class="card-icon" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="11" fill="#E6F4EF"/><path d="M11 11h14v15H11zm3 4h8m-8 4h8m-8 4h5" stroke="#55937D" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
+        <p>Показатели берутся из того же демоотчёта, что и в «Аналитике продуктов». Здесь показан только проект DEMO за последний доступный период.</p>
+        <a class="button" href="analytics.html">Открыть аналитику ↗</a>
+      </section>
+    </div>
   </main>
+  <script src="js/demo-data.js?v=pages-settings-2"></script>
+  <script src="js/demo-api.js?v=pages-settings-2"></script>
+  <script>
+    (() => {
+      const $ = id => document.getElementById(id);
+      const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+      const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' });
+      const signed = new Intl.NumberFormat('ru-RU', { signDisplay: 'exceptZero' });
+      const compact = value => Number.isFinite(value) ? number.format(value) : '—';
+      const reasons = [];
+      function render() {
+        const query = $('reason-search').value.trim().toLocaleLowerCase('ru');
+        const matches = reasons.filter(item => (item.title + ' ' + item.group).toLocaleLowerCase('ru').includes(query));
+        $('reason-list').replaceChildren(...matches.map(item => {
+          const row = document.createElement('li');
+          const label = document.createElement('div');
+          label.className = 'reason-name';
+          label.textContent = item.title;
+          const detail = document.createElement('span');
+          detail.className = 'reason-detail';
+          detail.textContent = item.group + ' · ' + compact(item.before) + ' → ' + compact(item.now);
+          label.append(detail);
+          const change = document.createElement('span');
+          change.className = 'delta ' + (item.change > 0 ? 'up' : 'down');
+          change.textContent = signed.format(item.change) + ' обр.';
+          row.append(label, change);
+          return row;
+        }));
+        $('reason-empty').textContent = matches.length ? '' : reasons.length
+          ? 'По запросу ничего не найдено.' : 'За выбранный период нет изменений по причинам или данных для сравнения.';
+      }
+      async function init() {
+        try {
+          const { data } = await window.L2DemoApi('/api/data');
+          const project = data.products.find(item => item.name === 'DEMO');
+          if (!project || !data.weeks.length) {
+            $('week-context').textContent = 'Проект DEMO отсутствует в текущем отчёте.';
+            return;
+          }
+          const i = data.weeks.length - 1;
+          const now = project.counts[i];
+          const before = project.counts[i - 1];
+          $('week-context').textContent = 'Отчётный период · ' + data.weeks[i];
+          $('current-label').textContent = data.weeks[i];
+          $('prior-label').textContent = data.weeks[i - 1] || 'Предыдущий период';
+          $('current-count').textContent = compact(now);
+          $('prior-count').textContent = compact(before);
+          if (Number.isFinite(now) && Number.isFinite(before)) {
+            $('project-delta').textContent = signed.format(now - before) + (before ? ' · ' + percent.format((now - before) / before) : '');
+          }
+          for (const group of project.groups) {
+            for (const reason of group.reasons) {
+              const current = reason.counts[i];
+              const previous = reason.counts[i - 1];
+              if (Number.isFinite(current) && Number.isFinite(previous) && current !== previous) {
+                reasons.push({ title: data.label_notes?.[reason.name] || reason.name, group: group.name,
+                  now: current, before: previous, change: current - previous });
+              }
+            }
+          }
+          reasons.sort((a, b) => Math.abs(b.change) - Math.abs(a.change) || a.title.localeCompare(b.title, 'ru'));
+          $('reason-search').disabled = !reasons.length;
+          render();
+        } catch {
+          $('week-context').textContent = 'Не удалось загрузить демоотчёт.';
+        }
+      }
+      $('reason-search').addEventListener('input', render);
+      init();
+    })();
+  </script>
 </body>
 </html>
