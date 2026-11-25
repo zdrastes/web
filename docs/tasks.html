@@ -44,6 +44,10 @@
     .reset-filter:hover:not(:disabled){background:#e9e2fa}
     .reset-filter:focus-visible{outline:2px solid #765bb6;outline-offset:2px}
     .reason-table .filter-cell{width:1%;padding-inline:4px}
+    .column-actions{display:inline-flex;align-items:center;gap:4px}
+    .sort-arrow{justify-content:center;min-width:25px;min-height:25px;border-radius:7px}
+    .sort-arrow:hover{background:#eee8f8}
+    [data-column-filter].filter-active::after{content:"";width:6px;height:6px;border-radius:50%;background:#765bb6}
     .sort-column{display:inline-flex;align-items:center;gap:5px;padding:4px 0;background:none;color:inherit;border:0;font:inherit;font-weight:650;cursor:pointer}
     .sort-column span{color:#765bb6}
     .sort-column:hover{color:#513886}
@@ -75,7 +79,7 @@
     #task-picker button[aria-pressed=true]{background:#e9e2fa;color:#4e3684;font-weight:650}
     #picker-search-label{display:grid;gap:5px;margin-bottom:10px;font-size:13px}
     #picker-search{width:100%;border:0;border-radius:12px;padding:9px 10px;background:#F0F2F5;color:inherit;font:inherit}
-    .picker-sort{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}#picker-options{display:grid;gap:6px}#picker-options button{text-align:left}
+    #picker-options{display:grid;gap:6px}#picker-options button{text-align:left}
     #picker-message:empty{display:none}
   </style>
 </head>
@@ -102,7 +106,7 @@
         <p class="muted">Тестовые задачи DEMO.</p>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица задач проекта DEMO">
           <table class="reason-table" aria-labelledby="tasks-title">
-            <thead><tr><th scope="col">Задача</th><th scope="col" aria-sort="ascending"><button class="sort-column" type="button" data-sort="status" aria-haspopup="dialog">Статус <span aria-hidden="true">↑</span></button></th><th scope="col"><button class="sort-column" type="button" data-sort="tag" aria-haspopup="dialog">Метка <span aria-hidden="true">↕</span></button></th><th scope="col" title="Дата создания"><button class="sort-column" type="button" data-sort="date">Дата <span aria-hidden="true">↕</span></button></th><th scope="col" class="filter-cell"><button type="button" class="reset-filter" id="reset-filters" aria-label="Сбросить фильтры" title="Сбросить фильтры" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 7a5 5 0 1 1 .8 4.7M3 7V3m0 4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></th></tr></thead>
+            <thead><tr><th scope="col">Задача</th><th scope="col" aria-sort="ascending"><div class="column-actions"><button class="sort-column" type="button" data-column-filter="status" aria-haspopup="dialog">Статус</button><button class="sort-column sort-arrow" type="button" data-sort="status" aria-label="Сортировать: Статус"><span aria-hidden="true">↑</span></button></div></th><th scope="col"><div class="column-actions"><button class="sort-column" type="button" data-column-filter="tag" aria-haspopup="dialog">Метка</button><button class="sort-column sort-arrow" type="button" data-sort="tag" aria-label="Сортировать: Метка"><span aria-hidden="true">↕</span></button></div></th><th scope="col" title="Дата создания"><button class="sort-column" type="button" data-sort="date">Дата <span aria-hidden="true">↕</span></button></th><th scope="col" class="filter-cell"><button type="button" class="reset-filter" id="reset-filters" aria-label="Сбросить фильтры" title="Сбросить фильтры" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 7a5 5 0 1 1 .8 4.7M3 7V3m0 4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></th></tr></thead>
             <tbody id="reason-list"></tbody>
           </table>
         </div>
@@ -116,10 +120,6 @@
   </main>
   <dialog id="task-picker" aria-labelledby="picker-title">
     <div class="picker-head"><h2 id="picker-title"></h2><button type="button" id="picker-close">Закрыть</button></div>
-    <div class="picker-sort">
-      <button type="button" id="picker-asc">По возрастанию ↑</button>
-      <button type="button" id="picker-desc">По убыванию ↓</button>
-    </div>
     <label id="picker-search-label" hidden>Поиск метки <input id="picker-search" type="search" autocomplete="off"></label>
     <div id="picker-options"></div>
     <p id="picker-message" class="muted" role="status"></p>
@@ -167,7 +167,7 @@
       };
       const order = Object.keys(labels);
       const collator = new Intl.Collator('ru');
-      const sortButtons = document.querySelectorAll('.sort-column');
+      const sortButtons = document.querySelectorAll('[data-sort]');
       let sortKey = 'status';
       let direction = 1;
       const storageKey = 'zdrastes.web.demo.project-tasks.v1';
@@ -236,18 +236,10 @@
         }));
         $('picker-message').textContent = matches.length ? '' : 'Метки не найдены.';
       }
-      function setSort(nextDirection) {
-        sortKey = editing;
-        direction = nextDirection;
-        render();
-        picker.close();
-      }
-      $('picker-asc').addEventListener('click', () => setSort(1));
-      $('picker-desc').addEventListener('click', () => setSort(-1));
       $('picker-close').addEventListener('click', () => picker.close());
       search.addEventListener('input', renderOptions);
       picker.addEventListener('close', () => {
-        document.querySelector('[data-sort="' + editing + '"]')?.focus({ preventScroll: true });
+        document.querySelector('[data-column-filter="' + editing + '"]')?.focus({ preventScroll: true });
       });
       function renderChart() {
         const tasks = visibleTasks();
@@ -290,11 +282,18 @@
           if (active) button.parentElement.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
           else button.parentElement.removeAttribute('aria-sort');
           const field = button.dataset.sort;
-          const filterValue = filters[field];
-          button.querySelector('span').textContent = filterValue ? '•' : active ? (direction === 1 ? '↑' : '↓') : '↕';
           const column = { status: 'Статус', tag: 'Метка', date: 'Дата' }[field];
-          button.setAttribute('aria-label', filterValue ? column + ': ' +
-            (field === 'tag' ? filterValue : labels[filterValue]) : column);
+          button.querySelector('span').textContent = active ? (direction === 1 ? '↑' : '↓') : '↕';
+          button.setAttribute('aria-label', column + ': сортировать ' +
+            (active && direction === 1 ? 'по убыванию' : 'по возрастанию'));
+          button.title = button.getAttribute('aria-label');
+          const filter = button.parentElement.querySelector('[data-column-filter]');
+          if (filter) {
+            const value = filters[field];
+            filter.classList.toggle('filter-active', Boolean(value));
+            filter.setAttribute('aria-label', value ? column + ': ' +
+              (field === 'tag' ? value : labels[value]) : column);
+          }
         }
         $('reason-list').replaceChildren(...matches.map(item => {
           const row = document.createElement('tr');
@@ -334,12 +333,8 @@
       for (const button of sortButtons) {
         button.addEventListener('click', () => {
           const field = button.dataset.sort;
-          if (field !== 'date') {
-            openPicker(field);
-            return;
-          }
-          direction = sortKey === 'date' ? -direction : 1;
-          sortKey = 'date';
+          direction = sortKey === field ? -direction : 1;
+          sortKey = field;
           render();
         });
       }
@@ -362,6 +357,9 @@
         });
       }
       employeeSelect.addEventListener('change', showView);
+      for (const button of document.querySelectorAll('[data-column-filter]')) {
+        button.addEventListener('click', () => openPicker(button.dataset.columnFilter));
+      }
       showView();
     })();
   </script>
