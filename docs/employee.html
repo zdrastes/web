@@ -3,22 +3,197 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'">
-  <title>Пространство сотрудника · Портал L2</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'sha256-ZuI/UAedegu50jxSxNXWxrGhxxlndo/iZWJEuJkEnPE='; base-uri 'none'; form-action 'none'">
+  <title>Рабочие графики · Портал L2</title>
   <link rel="stylesheet" href="css/portal.css">
+  <style>
+    [hidden]{display:none!important}
+    .schedule{padding:32px 0 60px}
+    .schedule h1{font-size:clamp(34px,6vw,62px);margin-bottom:12px}
+    .schedule .intro{margin-bottom:26px}
+    .tabs,.week-nav,.view-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .tabs{padding:5px;background:#eae3f4;border-radius:14px;width:fit-content;margin-bottom:18px}
+    button,select{font:inherit;color:inherit;border:1px solid #dcd1e9;background:white;border-radius:10px;padding:8px 12px}
+    button{cursor:pointer}
+    button:focus-visible,select:focus-visible,.table-wrap:focus-visible{outline:3px solid #7040c4;outline-offset:3px}
+    button:disabled{opacity:.55;cursor:default}
+    .tabs button{background:transparent;border-color:transparent;font-weight:650}
+    .tabs button[aria-pressed=true]{background:#30204b;color:white}
+    .calendar{background:#fff;border:1px solid #e2d9ef;border-radius:22px;padding:22px;box-shadow:0 14px 35px #3420520d}
+    .week-nav{padding-bottom:16px;border-bottom:1px solid #eee8f4}
+    .week-nav h2{flex:1;font-size:20px;margin:0;min-width:180px}
+    .week-nav button:not(:disabled):hover{background:#f2ebfb}
+    .view-head{justify-content:space-between;margin:18px 0 14px}
+    .view-head h3{margin:0;font-size:19px}
+    .person-select{display:flex;align-items:center;gap:8px}
+    .summary{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 16px}
+    .summary div{padding:10px 14px;border-radius:11px;background:#f5f1fa}
+    .summary strong{display:block;font-size:19px;color:#3d2266}
+    .summary span,.day-date{font-size:13px;color:#625774}
+    .days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:7px;list-style:none;margin:0;padding:0}
+    .day-card{position:relative;padding:10px 7px;border:1px solid #ebe4f3;border-radius:13px;background:#fff}
+    .current{background:#f8f2ff;border-color:#bb9ae5}
+    .day-name,.day-date{display:block;text-transform:capitalize}
+    .day-date{margin-top:3px}
+    .today-tag{display:block;font-size:11px;color:#5a318d;margin-top:4px}
+    .shift{display:grid;gap:4px;padding:7px;border-radius:8px;font-size:12px;line-height:1.25;background:#f0edf4;color:#504560}
+    .day-card .shift{margin-top:8px}
+    .shift span{white-space:nowrap}
+    .shift.early{background:#dff2e9;color:#154a35}
+    .shift.day{background:#e9dff8;color:#463166}
+    .shift.late{background:#fdebdc;color:#633715}
+    .table-wrap{overflow:auto;border:1px solid #e7def0;border-radius:12px}
+    table{border-collapse:collapse;width:100%;min-width:755px;text-align:left}
+    th,td{padding:9px 8px;border-bottom:1px solid #ebe5f0;vertical-align:top}
+    thead th{background:#f7f2fb}
+    tbody tr:last-child>*{border-bottom:none}
+    .person,thead th:first-child{position:sticky;left:0;background:#fff;min-width:134px;box-shadow:1px 0 #ebe5f0}
+    thead th:first-child{background:#f7f2fb}
+    .legend{margin:15px 0 0;color:#625774;font-size:13px;line-height:1.5}
+    @media(max-width:900px){.days{grid-template-columns:repeat(4,minmax(0,1fr))}}
+    @media(max-width:540px){.calendar{padding:12px}.days{grid-template-columns:repeat(2,minmax(0,1fr))}.week-nav h2{flex-basis:100%}.person-select{align-items:flex-start;flex-direction:column}}
+  </style>
 </head>
 <body>
   <header class="shell">
     <a class="logo" href="./"><span class="mark">L2</span> Портал L2</a>
     <span class="top-note">Демо-версия</span>
   </header>
-  <main class="shell">
+  <main class="shell schedule">
     <a class="back" href="./">← На главную</a>
     <h1>Пространство сотрудника</h1>
-    <div class="empty">
-      <h2>Раздел готовится</h2>
-      <p>Здесь появятся инструменты для повседневной работы команды L2.</p>
+    <p class="intro">Рабочие графики на неделю</p>
+    <div class="tabs" role="group" aria-label="Вид графика">
+      <button id="personal-tab" type="button" aria-pressed="true" aria-controls="personal-view">Мой график</button>
+      <button id="team-tab" type="button" aria-pressed="false" aria-controls="team-view">График команды</button>
     </div>
+    <section class="calendar" aria-labelledby="week-label">
+      <div class="week-nav">
+        <h2 id="week-label" aria-live="polite"></h2>
+        <button id="previous-week" type="button" aria-label="Предыдущая неделя">←</button>
+        <button id="this-week" type="button">Текущая неделя</button>
+        <button id="next-week" type="button" aria-label="Следующая неделя">→</button>
+      </div>
+      <section id="personal-view" aria-labelledby="personal-title">
+        <div class="view-head">
+          <h3 id="personal-title">Личный график</h3>
+          <label class="person-select">Демосотрудник <select id="person-select"></select></label>
+        </div>
+        <div class="summary" aria-label="Итоги недели">
+          <div><strong id="shift-total"></strong><span>Смены</span></div>
+          <div><strong id="hours-total"></strong><span>Рабочие часы</span></div>
+          <div><strong id="off-total"></strong><span>Выходные</span></div>
+        </div>
+        <ol class="days" id="personal-days"></ol>
+      </section>
+      <section id="team-view" aria-labelledby="team-title" hidden>
+        <div class="view-head"><h3 id="team-title">Смены команды</h3></div>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Таблица графика команды">
+          <table aria-labelledby="team-title">
+            <thead id="team-head"></thead>
+            <tbody id="team-body"></tbody>
+          </table>
+        </div>
+      </section>
+      <p class="legend">Время московское. Рабочие часы указаны за вычетом часового перерыва. Имена и смены вымышлены.</p>
+      <noscript>Включите JavaScript, чтобы просмотреть графики.</noscript>
+    </section>
   </main>
+<script>(() => {
+  'use strict';
+  const shifts = {
+    early: { label: 'Утренняя', time: '08:00–17:00', hours: 8 },
+    day: { label: 'Дневная', time: '09:00–18:00', hours: 8 },
+    late: { label: 'Вечерняя', time: '12:00–21:00', hours: 8 },
+    off: { label: 'Выходной', time: '', hours: 0 },
+  };
+  const people = [
+    { name: 'Анна Волкова', pattern: ['day','day','early','early','day','off','off'] },
+    { name: 'Илья Орлов', pattern: ['early','early','day','day','off','day','off'] },
+    { name: 'Мария Соколова', pattern: ['late','late','late','off','late','off','day'] },
+    { name: 'Денис Лебедев', pattern: ['off','day','off','late','early','early','early'] },
+    { name: 'Ольга Крылова', pattern: ['day','off','day','day','day','off','late'] },
+  ];
+  const $ = id => document.getElementById(id);
+  const moscowDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit',
+  });
+  const today = new Date(moscowDate.format(new Date()) + 'T00:00:00Z');
+  const dayMs = 86400000;
+  const monday = today.getTime() - ((today.getUTCDay() + 6) % 7) * dayMs;
+  const weekday = new Intl.DateTimeFormat('ru-RU', { weekday: 'short', timeZone: 'UTC' });
+  const dateNumber = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  const fullDate = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const view = { week: 0, person: 0, team: false };
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text) node.textContent = text;
+    return node;
+  }
+  function shiftFor(person, day) {
+    return person.pattern[day];
+  }
+  function badge(type) {
+    const shift = shifts[type];
+    const node = element('div', 'shift ' + type);
+    node.append(element('strong', '', shift.label));
+    if (shift.time) node.append(element('span', '', shift.time));
+    return node;
+  }
+  function render() {
+    const dates = Array.from({ length: 7 }, (_, index) => new Date(monday + (view.week * 7 + index) * dayMs));
+    $('week-label').textContent = fullDate.formatRange(dates[0], dates[6]);
+    $('this-week').disabled = view.week === 0;
+    $('personal-view').hidden = view.team;
+    $('team-view').hidden = !view.team;
+    $('personal-tab').setAttribute('aria-pressed', String(!view.team));
+    $('team-tab').setAttribute('aria-pressed', String(view.team));
+    const person = people[view.person];
+    const active = person.pattern.filter(key => key !== 'off').length;
+    const hours = person.pattern.reduce((sum, key) => sum + shifts[key].hours, 0);
+    $('shift-total').textContent = active;
+    $('hours-total').textContent = hours + ' ч';
+    $('off-total').textContent = 7 - active;
+    $('personal-days').replaceChildren(...dates.map((date, index) => {
+      const item = element('li', 'day-card' + (+date === +today ? ' current' : ''));
+      item.append(element('strong', 'day-name', weekday.format(date)), element('span', 'day-date', dateNumber.format(date)));
+      if (+date === +today) item.append(element('span', 'today-tag', 'Сегодня'));
+      item.append(badge(shiftFor(person, index)));
+      return item;
+    }));
+    const head = element('tr');
+    const title = element('th', '', 'Сотрудник');
+    title.scope = 'col';
+    head.append(title);
+    dates.forEach(date => {
+      const cell = element('th', +date === +today ? 'current' : '');
+      cell.scope = 'col';
+      cell.append(element('strong', 'day-name', weekday.format(date)), element('span', 'day-date', dateNumber.format(date)));
+      head.append(cell);
+    });
+    $('team-head').replaceChildren(head);
+    $('team-body').replaceChildren(...people.map(person => {
+      const row = element('tr');
+      const name = element('th', 'person', person.name);
+      name.scope = 'row';
+      row.append(name);
+      dates.forEach((date, index) => {
+        const cell = element('td', +date === +today ? 'current' : '');
+        cell.append(badge(shiftFor(person, index)));
+        row.append(cell);
+      });
+      return row;
+    }));
+  }
+  people.forEach((person, index) => $('person-select').add(new Option(person.name, index)));
+  $('person-select').addEventListener('change', event => { view.person = Number(event.target.value); render(); });
+  $('personal-tab').addEventListener('click', () => { view.team = false; render(); });
+  $('team-tab').addEventListener('click', () => { view.team = true; render(); });
+  $('previous-week').addEventListener('click', () => { view.week -= 1; render(); });
+  $('next-week').addEventListener('click', () => { view.week += 1; render(); });
+  $('this-week').addEventListener('click', () => { view.week = 0; render(); });
+  render();
+})();</script>
 </body>
 </html>
