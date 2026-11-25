@@ -25,7 +25,7 @@ body:has(.portal-signin:not([hidden])) > header { visibility: hidden; }
 }
 .portal-signin-card h1 { margin: 0; font-size: 18px; line-height: 1.35; }
 .portal-signin-card p { margin: 0; color: #747487; font-size: 13px; }
-.portal-signin-card button {
+.portal-signin .portal-signin-card button {
   width: 100%;
   min-height: 40px;
   padding: 9px 14px;
@@ -36,5 +36,5 @@ body:has(.portal-signin:not([hidden])) > header { visibility: hidden; }
   font: 600 14px system-ui, sans-serif;
   cursor: pointer;
 }
-.portal-signin-card button:hover { background: #6926bd; }
-.portal-signin-card button:focus-visible { outline: 2px solid #6926bd; outline-offset: 3px; }
+.portal-signin .portal-signin-card button:hover { background: #6926bd; }
+.portal-signin .portal-signin-card button:focus-visible { outline: 2px solid #6926bd; outline-offset: 3px; }
