@@ -134,8 +134,9 @@ dialog::backdrop{background:#36415955}
 #account-panel dl{margin:10px 0;display:grid;gap:7px}
 #account-panel dl div{display:flex;justify-content:space-between;gap:10px;font-size:13px}
 #account-panel dt{color:var(--muted)}#account-panel dd{margin:0;text-align:right;font-weight:600}
-#account-logout{width:100%}#account-login{margin-top:12px}
+#account-logout{width:100%}
 </style>
+  <link rel="stylesheet" href="css/portal-signin.css">
 </head>
 <body>
   <header class="shell">
@@ -159,11 +160,11 @@ dialog::backdrop{background:#36415955}
       </section>
     </div>
   </header>
-  <section class="shell schedule" id="workspace-signin" hidden aria-labelledby="workspace-signin-title">
-    <a class="back" href="./">← На главную</a>
-    <div class="dash-card">
+  <section class="portal-signin" id="workspace-signin" hidden aria-labelledby="workspace-signin-title">
+    <div class="portal-signin-card">
       <h1 id="workspace-signin-title">Вход</h1>
-      <button id="account-login" type="button">Войти в демопрофиль</button>
+      <p>Демо работает на синтетических данных.</p>
+      <button type="button" id="account-login">Войти в демо-режиме</button>
     </div>
   </section>
   <main class="shell schedule" id="workspace-main">
