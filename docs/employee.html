@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'sha256-ROSbgvJIm1mwnMhm5wDtSmaoMHKuIraLqA/4d5E3Xys='; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'sha256-T/2zRQQicoHy9WctBx1b86X3H/mx4DfKKXw/rpophxY='; base-uri 'none'; form-action 'none'">
   <title>Рабочие графики · Портал L2</title>
   <link rel="stylesheet" href="css/portal.css">
   <style>
@@ -72,7 +72,25 @@
     .editor-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px}
     #editor-error{color:#a02139}
     #status{color:#3d255e;font-weight:600}
-  </style>
+  
+:root{background:#edf3f2;color:#192c33}
+body{background:radial-gradient(ellipse at 100% 0%,#d7ece5,transparent 52%),#edf3f2}
+header.shell{min-height:64px;border-color:#244c4930}.logo .mark{background:#153f3b}.top-note,.back{color:#35625a}
+.schedule{padding-top:23px}.schedule .back{margin-bottom:15px;font-size:14px}
+.hero{position:relative;isolation:isolate;overflow:hidden;display:grid;grid-template-columns:1fr minmax(210px,30%);align-items:center;gap:20px;padding:clamp(22px,5vw,44px);margin-bottom:18px;background:linear-gradient(115deg,#122d37,#174943 78%,#245d50);color:#f5fffb;border-radius:26px}
+.hero::after{content:"";position:absolute;z-index:-1;inset:0;background:repeating-linear-gradient(114deg,transparent 0 24px,#ceffec12 25px 26px,transparent 27px 52px);mask-image:linear-gradient(90deg,transparent 30%,black)}
+.schedule .hero h1{font-size:clamp(34px,6.2vw,69px);line-height:1;letter-spacing:-.07em;margin:0 0 12px}
+.hero p{margin:0;color:#c0dfd6;line-height:1.45}.next{border-radius:15px;padding:16px;background:#e5f7ee;color:#173c35;box-shadow:0 10px 30px #05292152}
+.next h2{font-size:15px;margin:0 0 6px}.next p{color:#315c50;font-size:13px}.next strong{display:block;font-size:19px;margin:6px 0 2px}.next button{margin-top:11px;font-size:13px}
+.tabs{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#dceae6;margin-bottom:12px}.tabs button{min-height:42px}.tabs button[aria-pressed=true],.primary{background:#194741;color:white;border-color:#194741}
+.calendar{border-color:#d5e3df;box-shadow:0 16px 38px #113b3011}.week-nav,.day-card,.entry,.table-wrap{border-color:#dce9e4}
+.summary div{background:#e9f4f0;min-width:100px}.summary strong,#status{color:#22584c}
+.day-card.current,.current{background:#edf8f3;border-color:#73ae9c}.today-tag{color:#276553}
+.shift{border-left:3px solid #a49cae}.shift.early{border-left-color:#4d9b7e}.shift.day{border-left-color:#886bb4}.shift.late{border-left-color:#c9824d}.shift.vacation{border-left-color:#b68427}
+thead th,thead th:first-child{background:#eaf3ef}.person{z-index:1}
+.filters{display:flex;flex-wrap:wrap;gap:9px;padding:10px;margin-bottom:13px;border-radius:12px;background:#eef5f2}.filters label{display:grid;gap:5px;font-size:13px;color:#345e54}.filters select,.filters input{font-size:14px}
+@media(max-width:680px){.hero{grid-template-columns:1fr}.hero h1 br{display:none}.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
 </head>
 <body>
   <header class="shell">
@@ -81,8 +99,7 @@
   </header>
   <main class="shell schedule">
     <a class="back" href="./">← На главную</a>
-    <h1>Пространство сотрудника</h1>
-    <p class="intro">Смены, отпуска и отчёты команды</p>
+    <div class="hero"><div><h1>Пространство<br> сотрудника</h1><p>Смены, отпуска и отчёты команды</p></div><aside class="next"><h2>Ближайшая смена</h2><p id="next-person"></p><strong id="next-date"></strong><p id="next-time"></p><button type="button" id="open-next">Открыть смену ↗</button></aside></div>
     <div class="tabs" role="group" aria-label="Вид графика">
       <button id="personal-tab" type="button" aria-pressed="true" aria-controls="personal-view">Мой график</button>
       <button id="team-tab" type="button" aria-pressed="false" aria-controls="team-view">График команды</button>
@@ -111,7 +128,7 @@
       </section>
       <section id="team-view" aria-labelledby="team-title" hidden>
         <div class="view-head"><h3 id="team-title">Смены команды</h3></div>
-        <div class="table-wrap" tabindex="0" role="region" aria-label="Таблица графика команды">
+        <div class="filters"><label>Сотрудник <select id="team-filter"><option value="">Вся команда</option></select></label></div><div class="table-wrap" tabindex="0" role="region" aria-label="Таблица графика команды">
           <table aria-labelledby="team-title">
             <thead id="team-head"></thead>
             <tbody id="team-body"></tbody>
@@ -120,11 +137,11 @@
       </section>
       <section id="vacation-view" aria-labelledby="vacation-title" hidden>
         <div class="view-head"><h3 id="vacation-title">График отпусков команды</h3><button type="button" class="primary" id="add-vacation">Добавить отпуск</button></div>
-        <div class="entry-list" id="vacation-list"></div>
+        <div class="filters"><label>Сотрудник <select id="vacation-filter"><option value="">Вся команда</option></select></label><label>Период <select id="vacation-period"><option value="">Все даты</option><option value="upcoming">Сегодня и позже</option><option value="past">Прошедшие</option></select></label></div><div class="entry-list" id="vacation-list"></div>
       </section>
       <section id="report-view" aria-labelledby="report-title" hidden>
         <div class="view-head"><h3 id="report-title">График отчётов</h3><button type="button" class="primary" id="add-report">Добавить отчёт</button></div>
-        <div class="entry-list" id="report-list"></div>
+        <div class="filters"><label>Ответственный <select id="report-filter"><option value="">Вся команда</option></select></label><label>Период <select id="report-period"><option value="">Все даты</option><option value="upcoming">Сегодня и позже</option><option value="past">Прошедшие</option></select></label><label>Название <input id="report-search" type="search" placeholder="Поиск отчёта"></label></div><div class="entry-list" id="report-list"></div>
       </section>
       <p class="legend">Время московское. Рабочие часы указаны за вычетом часового перерыва. Все данные вымышлены. Изменения сохраняются только в этом браузере.</p>
       <noscript>Включите JavaScript, чтобы просмотреть графики.</noscript>
@@ -226,7 +243,21 @@
     button.addEventListener('click', () => openEditor('shift', { person, date, type: scheduled(person, date) }));
     return button;
   }
+  function nextShift() {
+    const clock = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date());
+    for (let offset = 0; offset < 366; offset += 1) {
+      const date = relative(offset);
+      const shift = shifts[displayed(view.person, date)];
+      if (shift.hours && (offset || shift.time.split('–')[1] > clock)) return { date, shift };
+    }
+    return null;
+  }
   function renderShifts() {
+    const next = nextShift();
+    $('next-person').textContent = people[view.person].name;
+    $('next-date').textContent = next ? fullDate.format(parse(next.date)) : 'Смены не найдены';
+    $('next-time').textContent = next ? next.shift.time + ' · МСК' : '';
+    $('open-next').disabled = !next;
     const dates = Array.from({ length: 7 }, (_, i) => new Date(monday + (view.week * 7 + i) * dayMs));
     $('week-label').textContent = fullDate.formatRange(dates[0], dates[6]);
     $('jump-date').value = iso(dates.some(date => +date === +today) ? today : dates[0]);
@@ -253,7 +284,10 @@
       head.append(cell);
     }
     $('team-head').replaceChildren(head);
-    $('team-body').replaceChildren(...people.map((person, index) => {
+    const teamFilter = $('team-filter').value;
+    const team = people.map((person, index) => ({ person, index }))
+      .filter(({ index }) => !teamFilter || teamFilter === String(index));
+    $('team-body').replaceChildren(...team.map(({ person, index }) => {
       const row = element('tr');
       const name = element('th', 'person', person.name);
       name.scope = 'row';
@@ -269,7 +303,14 @@
   function renderList(kind, items) {
     const vacation = kind === 'vacation';
     const list = $(kind + '-list');
-    const sorted = [...items].sort((a, b) => (a.start ?? a.date).localeCompare(b.start ?? b.date));
+    const employee = $(kind + '-filter').value;
+    const period = $(kind + '-period').value;
+    const search = vacation ? '' : $('report-search').value.trim().toLocaleLowerCase('ru');
+    const sorted = items.filter(item =>
+      (!employee || employee === String(item.person)) &&
+      (!period || ((item.end ?? item.date) < iso(today)) === (period === 'past')) &&
+      (!search || item.title.toLocaleLowerCase('ru').includes(search))
+    ).sort((a, b) => (a.start ?? a.date).localeCompare(b.start ?? b.date));
     list.replaceChildren(...sorted.map(item => {
       const entry = element('div', 'entry');
       const details = element('div');
@@ -285,7 +326,7 @@
       entry.append(details, button);
       return entry;
     }));
-    if (!sorted.length) list.append(element('p', 'legend', vacation ? 'Отпусков пока нет.' : 'Отчётов пока нет.'));
+    if (!sorted.length) list.append(element('p', 'legend', items.length ? 'По выбранным фильтрам ничего не найдено.' : vacation ? 'Отпусков пока нет.' : 'Отчётов пока нет.'));
   }
   function render() {
     for (const page of pages) {
@@ -386,7 +427,25 @@
   $('editor-cancel').addEventListener('click', () => $('editor').close());
   $('add-vacation').addEventListener('click', () => openEditor('vacation', {}));
   $('add-report').addEventListener('click', () => openEditor('report', {}));
-  people.forEach((person, index) => $('person-select').add(new Option(person.name, index)));
+  for (const fieldId of ['person-select', 'team-filter', 'vacation-filter', 'report-filter']) {
+    people.forEach((person, index) => $(fieldId).add(new Option(person.name, index)));
+  }
+  $('team-filter').addEventListener('change', renderShifts);
+  for (const kind of ['vacation', 'report']) {
+    for (const suffix of ['filter', 'period']) {
+      $(kind + '-' + suffix).addEventListener('change', () => renderList(kind, data[kind + 's']));
+    }
+  }
+  $('report-search').addEventListener('input', () => renderList('report', data.reports));
+  $('open-next').addEventListener('click', () => {
+    const next = nextShift();
+    if (!next) return;
+    view.page = 'personal';
+    view.week = Math.floor((+parse(next.date) - monday) / (7 * dayMs));
+    render();
+    const index = (parse(next.date).getUTCDay() + 6) % 7;
+    $('personal-days').children[index].querySelector('button').focus();
+  });
   $('person-select').addEventListener('change', event => { view.person = Number(event.target.value); render(); });
   for (const page of pages) {
     $(page + '-tab').addEventListener('click', () => { view.page = page; render(); });
