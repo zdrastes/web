@@ -112,7 +112,10 @@ dialog::backdrop{background:#36415955}
 #bell{display:grid;place-items:center;width:42px;height:42px;padding:0}
 #bell-count{position:absolute;right:-4px;top:-4px;border:2px solid #F3F5F8;border-radius:20px;padding:1px 5px;background:#584490;color:#fff;font-size:11px}
 #notice-panel{position:absolute;right:0;top:calc(100% + 10px);z-index:5;width:min(365px,calc(100vw - 28px));padding:15px;background:#fff;border:1px solid #e6eaf0;border-radius:20px;box-shadow:var(--shadow)}
-.notice-head{justify-content:space-between}.notice-head button,#notice-person,.notice small{font-size:13px}
+.notice-head{justify-content:space-between}.notice-head button,#notice-person,.notice[href]{color:inherit;text-decoration:none;padding:9px 12px;border-radius:12px;background:#F0F2F5}
+.notice[href].unread{background:#ebe4fa}
+.notice[href]:hover{background:#e4d9f7}
+.notice small{font-size:13px}
 #notice-person{margin:8px 0;color:#657080}
 #notice-list{list-style:none;margin:0;padding:0;max-height:55vh;overflow:auto;display:grid;gap:6px}
 .notice{width:100%;display:grid;gap:4px;text-align:left;overflow-wrap:anywhere}.notice.unread{background:#ebe4fa;box-shadow:inset 3px 0 #8061bf}
@@ -276,6 +279,7 @@ dialog::backdrop{background:#36415955}
     </div>
     <p class="legend">Это демо. Изменения сохраняются в текущем браузере.</p>
   </dialog>
-  <script src="js/employee-workspace.js?v=2"></script>
+  <script src="js/task-assignments.js?v=1"></script>
+  <script src="js/employee-workspace.js?v=3"></script>
 </body>
 </html>
