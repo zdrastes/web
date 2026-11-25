@@ -90,7 +90,7 @@
         <p class="muted">Тестовые задачи DEMO.</p>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица задач проекта DEMO">
           <table class="reason-table" aria-labelledby="tasks-title">
-            <thead><tr><th scope="col">Задача</th><th scope="col" aria-sort="ascending"><button class="sort-column" type="button" data-sort="status" aria-haspopup="dialog">Статус <span aria-hidden="true">↑</span></button></th><th scope="col"><button class="sort-column" type="button" data-sort="tag" aria-haspopup="dialog">Метка <span aria-hidden="true">↕</span></button></th><th scope="col" title="Дата создания">Дата</th><th scope="col" class="filter-cell"><button type="button" class="reset-filter" id="reset-filters" aria-label="Сбросить фильтры" title="Сбросить фильтры" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 7a5 5 0 1 1 .8 4.7M3 7V3m0 4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></th></tr></thead>
+            <thead><tr><th scope="col">Задача</th><th scope="col" aria-sort="ascending"><button class="sort-column" type="button" data-sort="status" aria-haspopup="dialog">Статус <span aria-hidden="true">↑</span></button></th><th scope="col"><button class="sort-column" type="button" data-sort="tag" aria-haspopup="dialog">Метка <span aria-hidden="true">↕</span></button></th><th scope="col" title="Дата создания"><button class="sort-column" type="button" data-sort="date">Дата <span aria-hidden="true">↕</span></button></th><th scope="col" class="filter-cell"><button type="button" class="reset-filter" id="reset-filters" aria-label="Сбросить фильтры" title="Сбросить фильтры" disabled><svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 7a5 5 0 1 1 .8 4.7M3 7V3m0 4h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button></th></tr></thead>
             <tbody id="reason-list"></tbody>
           </table>
         </div>
@@ -235,9 +235,11 @@
         const matches = tasks.filter(item =>
           (!filters.status || getStatus(item) === filters.status) &&
           (!filters.tag || getTag(item) === filters.tag)
-        ).sort((a, b) => direction * (sortKey === 'status'
-          ? order.indexOf(getStatus(a)) - order.indexOf(getStatus(b))
-          : collator.compare(getTag(a), getTag(b))));
+        ).sort((a, b) => {
+          if (sortKey === 'date') return direction * a.date.localeCompare(b.date);
+          if (sortKey === 'tag') return direction * collator.compare(getTag(a), getTag(b));
+          return direction * (order.indexOf(getStatus(a)) - order.indexOf(getStatus(b)));
+        });
         for (const button of sortButtons) {
           const active = button.dataset.sort === sortKey;
           if (active) button.parentElement.setAttribute('aria-sort', direction === 1 ? 'ascending' : 'descending');
@@ -245,7 +247,7 @@
           const field = button.dataset.sort;
           const filterValue = filters[field];
           button.querySelector('span').textContent = filterValue ? '•' : active ? (direction === 1 ? '↑' : '↓') : '↕';
-          const column = field === 'tag' ? 'Метка' : 'Статус';
+          const column = { status: 'Статус', tag: 'Метка', date: 'Дата' }[field];
           button.setAttribute('aria-label', filterValue ? column + ': ' +
             (field === 'tag' ? filterValue : labels[filterValue]) : column);
         }
@@ -285,7 +287,16 @@
         $('reason-empty').textContent = matches.length ? '' : 'Нет задач по выбранным фильтрам.';
       }
       for (const button of sortButtons) {
-        button.addEventListener('click', () => openPicker(button.dataset.sort));
+        button.addEventListener('click', () => {
+          const field = button.dataset.sort;
+          if (field !== 'date') {
+            openPicker(field);
+            return;
+          }
+          direction = sortKey === 'date' ? -direction : 1;
+          sortKey = 'date';
+          render();
+        });
       }
       renderChart();
       render();
