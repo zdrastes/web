@@ -18,20 +18,17 @@
     h1{font-size:28px;font-weight:700;margin:0 0 6px;letter-spacing:-.035em}
     h2{font-size:18px;font-weight:600;margin:0;letter-spacing:-.022em}
     .subtitle{margin:0 0 20px}
-    .bento{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1fr);grid-template-areas:"hero hero metrics" "tasks tasks source";grid-template-rows:minmax(175px,auto) minmax(240px,auto);gap:16px}
+    .bento{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1fr);grid-template-areas:"hero hero metrics" "tasks tasks distribution";grid-template-rows:minmax(175px,auto) minmax(240px,auto);gap:16px}
     .card{position:relative;min-width:0;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 12px rgba(16,24,40,.03);padding:20px}
     .hero{grid-area:hero;overflow:hidden;isolation:isolate;background:linear-gradient(120deg,#7354b2,#686bc2 60%,#868bd1);color:#fff;display:flex;flex-direction:column;justify-content:center}
     .hero p{margin:8px 0 0;max-width:75%;line-height:1.45;color:#fff}
     .hero h2{font-size:24px}.hero svg{position:absolute;right:8px;bottom:0;width:145px;z-index:-1;opacity:.65}
-    .metrics{grid-area:metrics}.source{grid-area:source;display:flex;flex-direction:column;align-items:stretch}
+    .metrics{grid-area:metrics}.distribution{grid-area:distribution}
     .tasks{grid-area:tasks}.card-icon{position:absolute;right:14px;top:14px;width:34px;height:34px}
-    .source h2,.metrics h2{padding-right:34px}
+    .metrics h2{padding-right:34px}
     .metrics dl{display:grid;gap:7px;margin:14px 0 0}
     .metrics dl div{display:flex;justify-content:space-between;gap:10px;padding-bottom:7px;border-bottom:1px solid #f0f2f5}
-    .metrics dt,.source p{color:var(--muted);font-size:13px;line-height:1.5}.metrics dd{margin:0;font-weight:700;white-space:nowrap}
-    .source p{margin:9px 0 12px}.source .button{margin-top:auto}
-    .button{display:block;width:100%;border:0;border-radius:12px;background:var(--soft);color:#1C1E21;text-align:center;text-decoration:none;padding:10px 12px;font-weight:600;transition:background-color .18s}
-    .button:hover{background:#e4e8ed}a:focus-visible,select:focus-visible{outline:2px solid #765bb6;outline-offset:3px}
+    .metrics dt{color:var(--muted);font-size:13px;line-height:1.5}.metrics dd{margin:0;font-weight:700;white-space:nowrap}
     .search{display:grid;gap:5px;margin:12px 0;color:#5e6673;font-size:13px}
     .search select{width:100%;border:0;border-radius:14px;padding:11px 12px;background:var(--soft);font:inherit;color:#1C1E21}
     .status-chart{display:grid;gap:8px;padding:12px;background:#F3F5F8;border-radius:14px;margin:14px 0}
@@ -53,8 +50,8 @@
     .reason-name{overflow-wrap:anywhere;font-weight:600}.reason-detail{display:block;color:#686f7c;font-size:13px;margin-top:4px}
     .delta{font-size:12px;white-space:nowrap;border-radius:999px;padding:5px 8px;background:#f0ebfa;color:#5c418f}
     .delta.up{background:#fbeee9;color:#9e4c28}.delta.down{background:#e7f6ef;color:#21664d}
-    @media(max-width:780px){.bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"hero metrics" "tasks tasks" "source source";grid-template-rows:auto}}
-    @media(max-width:520px){.shell{width:calc(100% - 28px)}.bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "metrics" "tasks" "source"}.hero{min-height:145px}.hero svg{width:105px}.card{padding:16px}}
+    @media(max-width:780px){.bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"hero metrics" "tasks tasks" "distribution distribution";grid-template-rows:auto}}
+    @media(max-width:520px){.shell{width:calc(100% - 28px)}.bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "metrics" "tasks" "distribution"}.hero{min-height:145px}.hero svg{width:105px}.card{padding:16px}}
     @media(prefers-reduced-motion:reduce){.button{transition:none}}
   </style>
 </head>
@@ -66,50 +63,47 @@
     <p class="subtitle muted">Проект DEMO · синтетические данные</p>
     <div class="bento">
       <section class="card hero" aria-labelledby="hero-title">
-        <h2 id="hero-title">Разбор обращений DEMO</h2>
-        <p id="week-context" role="status">Загружаем отчёт…</p>
+        <h2 id="hero-title">Задачи проекта DEMO</h2>
+        <p id="week-context" role="status">Тестовый список задач проекта</p>
         <svg viewBox="0 0 140 112" fill="none" aria-hidden="true"><circle cx="93" cy="65" r="43" fill="#D6CBFC" fill-opacity=".44"/><rect x="38" y="18" width="64" height="78" rx="13" fill="#E5DDFE"/><path d="M53 43l5 5 9-10m-14 22 5 5 9-10M75 44h12M75 61h12M54 77h33" stroke="#6B57AA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </section>
       <section class="card metrics" aria-labelledby="metrics-title">
-        <h2 id="metrics-title">Обращения за неделю</h2>
+        <h2 id="metrics-title">Сводка по задачам</h2>
         <svg class="card-icon" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="11" fill="#EFEAFC"/><path d="M11 24v-5m7 5V12m7 12v-8" stroke="#7961B2" stroke-width="2.2" stroke-linecap="round"/></svg>
-        <dl><div><dt id="current-label">Текущая неделя</dt><dd id="current-count">—</dd></div><div><dt id="prior-label">Предыдущая неделя</dt><dd id="prior-count">—</dd></div><div><dt>Изменение</dt><dd id="project-delta">—</dd></div></dl>
+        <dl><div><dt>Всего</dt><dd id="task-total">—</dd></div><div><dt>Открытые</dt><dd id="task-open">—</dd></div><div><dt>В работе и ожидании</dt><dd id="task-active">—</dd></div></dl>
       </section>
       <section class="card tasks" aria-labelledby="tasks-title">
-        <h2 id="tasks-title">Предложения к разбору</h2>
-        <p class="muted">Причины, по которым изменилось число обращений. Это предложения, без назначенных исполнителей.</p>
+        <h2 id="tasks-title">Список задач</h2>
+        <p class="muted">Тестовые задачи DEMO. Изменения статусов сохраняются в этом браузере.</p>
         <label class="search">Статус задач <select id="status-filter" disabled><option value="">Все статусы</option></select></label>
-        <section class="status-chart" aria-labelledby="status-chart-title">
-          <h3 id="status-chart-title">Задачи по статусам</h3>
-          <div id="reason-chart" class="status-chart" style="margin:0;padding:0" aria-live="polite"></div>
-        </section>
-        <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица предложений к разбору">
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Таблица задач проекта DEMO">
           <table class="reason-table" aria-labelledby="tasks-title">
-            <thead><tr><th scope="col">Причина</th><th scope="col">Обращения</th><th scope="col">Изменение</th><th scope="col">Статус</th></tr></thead>
+            <thead><tr><th scope="col">Задача</th><th scope="col">Исполнитель</th><th scope="col">Статус</th></tr></thead>
             <tbody id="reason-list"></tbody>
           </table>
         </div>
         <p id="reason-status" class="muted" role="status" hidden></p>
         <p id="reason-empty" class="muted" role="status"></p>
       </section>
-      <section class="card source" aria-labelledby="source-title">
-        <h2 id="source-title">Источник данных</h2>
-        <svg class="card-icon" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="11" fill="#E6F4EF"/><path d="M11 11h14v15H11zm3 4h8m-8 4h8m-8 4h5" stroke="#55937D" stroke-width="1.6" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
-        <p>Показатели берутся из того же демоотчёта, что и в «Аналитике продуктов». Здесь показан только проект DEMO за последний доступный период.</p>
-        <a class="button" href="analytics.html">Открыть аналитику ↗</a>
+      <section class="card distribution" aria-labelledby="status-chart-title">
+        <h2 id="status-chart-title">Задачи по статусам</h2>
+        <div id="reason-chart" class="status-chart" aria-live="polite"></div>
       </section>
     </div>
   </main>
-  <script src="js/demo-data.js?v=pages-settings-2"></script>
-  <script src="js/demo-api.js?v=pages-settings-2"></script>
   <script>
     (() => {
       const $ = id => document.getElementById(id);
-      const number = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
-      const percent = new Intl.NumberFormat('ru-RU', { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' });
-      const signed = new Intl.NumberFormat('ru-RU', { signDisplay: 'exceptZero' });
-      const compact = value => Number.isFinite(value) ? number.format(value) : '—';
-      const reasons = [];
+      const tasks = [
+        { id: 'DEMO-101', title: 'Разобрать повторные обращения по интеграции', assignee: 'Анна Волкова', status: 'open' },
+        { id: 'DEMO-102', title: 'Исправить дублирование записей при повторной синхронизации', assignee: 'Илья Орлов', status: 'dev' },
+        { id: 'DEMO-103', title: 'Пересчитать итог по обращениям за неделю', assignee: 'Мария Соколова', status: 'recalc' },
+        { id: 'DEMO-104', title: 'Проверить исправление ошибки выгрузки отчёта', assignee: 'Денис Лебедев', status: 'fix' },
+        { id: 'DEMO-105', title: 'Уточнить сценарий ошибки доступа к проекту', assignee: 'Ольга Крылова', status: 'open' },
+        { id: 'DEMO-106', title: 'Убрать ошибку при переключении фильтра', assignee: 'Илья Орлов', status: 'dev' },
+        { id: 'DEMO-107', title: 'Сверить данные по закрытым обращениям', assignee: 'Анна Волкова', status: 'recalc' },
+        { id: 'DEMO-108', title: 'Проверить загрузку отчёта после обновления', assignee: 'Мария Соколова', status: 'fix' },
+      ];
       const labels = {
         open: 'Открытые',
         dev: 'Передано в разработку',
@@ -119,16 +113,19 @@
       const filter = $('status-filter');
       const order = Object.keys(labels);
       for (const value of order) filter.add(new Option(labels[value], value));
-      const storageKey = 'zdrastes.web.demo.reason-statuses.v1';
+      const storageKey = 'zdrastes.web.demo.project-tasks.v1';
       let saved = {};
       try {
         const stored = JSON.parse(localStorage.getItem(storageKey));
         if (stored && typeof stored === 'object' && !Array.isArray(stored)) saved = stored;
       } catch {}
-      const getStatus = id => Object.hasOwn(labels, saved[id]) ? saved[id] : 'open';
+      const getStatus = task => Object.hasOwn(labels, saved[task.id]) ? saved[task.id] : task.status;
       function renderChart() {
         const counts = { open: 0, dev: 0, recalc: 0, fix: 0 };
-        for (const item of reasons) counts[getStatus(item.id)] += 1;
+        for (const item of tasks) counts[getStatus(item)] += 1;
+        $('task-total').textContent = tasks.length;
+        $('task-open').textContent = counts.open;
+        $('task-active').textContent = tasks.length - counts.open;
         $('reason-chart').replaceChildren(...Object.entries(labels).map(([value, label]) => {
           const row = document.createElement('div');
           row.className = 'status-row';
@@ -140,7 +137,7 @@
           track.setAttribute('aria-hidden', 'true');
           const fill = document.createElement('div');
           fill.className = 'status-fill';
-          fill.style.width = (reasons.length ? 100 * counts[value] / reasons.length : 0) + '%';
+          fill.style.width = (tasks.length ? 100 * counts[value] / tasks.length : 0) + '%';
           track.append(fill);
           const count = document.createElement('strong');
           count.textContent = counts[value];
@@ -161,14 +158,14 @@
           const moved = Array.from($('reason-list').querySelectorAll('.status-select')).find(field => field.dataset.taskId === item.id);
           (moved || filter).focus({ preventScroll: true });
         } catch {
-          select.value = getStatus(item.id);
+          select.value = getStatus(item);
           notice.textContent = 'Не удалось сохранить статус в этом браузере.';
           notice.hidden = false;
         }
       }
       function render() {
-        const matches = reasons.filter(item => !filter.value || getStatus(item.id) === filter.value)
-          .sort((a, b) => order.indexOf(getStatus(a.id)) - order.indexOf(getStatus(b.id)));
+        const matches = tasks.filter(item => !filter.value || getStatus(item) === filter.value)
+          .sort((a, b) => order.indexOf(getStatus(a)) - order.indexOf(getStatus(b)));
         $('reason-list').replaceChildren(...matches.map(item => {
           const row = document.createElement('tr');
           const label = document.createElement('th');
@@ -177,71 +174,30 @@
           label.textContent = item.title;
           const detail = document.createElement('span');
           detail.className = 'reason-detail';
-          detail.textContent = item.group;
+          detail.textContent = item.id;
           label.append(detail);
-          const counts = document.createElement('td');
-          counts.textContent = compact(item.before) + ' → ' + compact(item.now);
-          const change = document.createElement('td');
-          const badge = document.createElement('span');
-          badge.className = 'delta ' + (item.change > 0 ? 'up' : 'down');
-          badge.textContent = signed.format(item.change) + ' обр.';
-          change.append(badge);
+          const assignee = document.createElement('td');
+          assignee.textContent = item.assignee;
           const status = document.createElement('td');
           const select = document.createElement('select');
           select.className = 'status-select';
           select.dataset.taskId = item.id;
-          select.setAttribute('aria-label', 'Статус: ' + item.title + ' · ' + item.group);
+          select.setAttribute('aria-label', 'Статус: ' + item.id + ' · ' + item.title);
           for (const [value, title] of Object.entries(labels)) select.add(new Option(title, value));
-          select.value = getStatus(item.id);
+          select.value = getStatus(item);
           select.dataset.status = select.value;
           select.addEventListener('change', () => setStatus(item, select));
           status.append(select);
-          row.append(label, counts, change, status);
+          row.append(label, assignee, status);
           return row;
         }));
-        $('reason-empty').textContent = matches.length ? '' : reasons.length
-          ? 'В этом статусе задач нет.' : 'За выбранный период нет изменений по причинам или данных для сравнения.';
+        $('reason-empty').textContent = matches.length ? '' : tasks.length
+          ? 'В этом статусе задач нет.' : 'В проекте пока нет задач.';
       }
-      async function init() {
-        try {
-          const { data } = await window.L2DemoApi('/api/data');
-          const project = data.products.find(item => item.name === 'DEMO');
-          if (!project || !data.weeks.length) {
-            $('week-context').textContent = 'Проект DEMO отсутствует в текущем отчёте.';
-            return;
-          }
-          const i = data.weeks.length - 1;
-          const now = project.counts[i];
-          const before = project.counts[i - 1];
-          $('week-context').textContent = 'Отчётный период · ' + data.weeks[i];
-          $('current-label').textContent = data.weeks[i];
-          $('prior-label').textContent = data.weeks[i - 1] || 'Предыдущий период';
-          $('current-count').textContent = compact(now);
-          $('prior-count').textContent = compact(before);
-          if (Number.isFinite(now) && Number.isFinite(before)) {
-            $('project-delta').textContent = signed.format(now - before) + (before ? ' · ' + percent.format((now - before) / before) : '');
-          }
-          for (const group of project.groups) {
-            for (const reason of group.reasons) {
-              const current = reason.counts[i];
-              const previous = reason.counts[i - 1];
-              if (Number.isFinite(current) && Number.isFinite(previous) && current !== previous) {
-                reasons.push({ id: JSON.stringify([project.name, data.weeks[i], group.name, reason.name]),
-                  title: data.label_notes?.[reason.name] || reason.name, group: group.name,
-                  now: current, before: previous, change: current - previous });
-              }
-            }
-          }
-          reasons.sort((a, b) => Math.abs(b.change) - Math.abs(a.change) || a.title.localeCompare(b.title, 'ru'));
-          filter.disabled = !reasons.length;
-          renderChart();
-          render();
-        } catch {
-          $('week-context').textContent = 'Не удалось загрузить демоотчёт.';
-        }
-      }
+      filter.disabled = !tasks.length;
       filter.addEventListener('change', render);
-      init();
+      renderChart();
+      render();
     })();
   </script>
 </body>
