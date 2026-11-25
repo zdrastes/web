@@ -121,14 +121,18 @@
         q('#problem-subtitle').textContent = g.reasons.length ? g.reasons.length + ' причин · ' + state.week : 'В исходнике нет причин для этой группы';
         root.querySelectorAll('[data-metric]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.metric === state.metric)));
         root.querySelectorAll('[data-overall-metric]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.overallMetric === state.overallMetric)));
-        renderWeekSummary();
-        renderLegend();
-        renderProblemLegend();
-        renderHistory();
-        renderWarnings();
-        renderInsight();
-        renderMatrix();
-        drawCharts();
+        if (state.view === 'weekSummary') {
+            renderWeekSummary();
+        } else if (state.view === 'matrix') {
+            renderMatrix();
+        } else {
+            renderLegend();
+            renderProblemLegend();
+            renderHistory();
+            renderWarnings();
+            renderInsight();
+            scheduleCharts();
+        }
         q('#ld-status').textContent = state.view === 'weekSummary' ? state.week + ': ' + q('#week-takeaway').textContent : label(p.name) + ' · ' + label(g.name) + ', ' + state.week + ': ' + n(g.counts[i]) + ' обращений, ' + rate(rates(g)[i]) + '.';
     }
     function renderWeekSummary() {
@@ -480,6 +484,14 @@
                 text.remove();
         }
     }
+    let chartFrame = 0;
+    function scheduleCharts() {
+        if (chartFrame || state.view !== 'overview') return;
+        chartFrame = requestAnimationFrame(() => {
+            chartFrame = 0;
+            if (state.view === 'overview') drawCharts();
+        });
+    }
     function drawCharts() {
         draw(q('#overall-plot'), [{
             ...group(),
@@ -653,13 +665,17 @@
         return response.text();
     }
     async function inlineAssets(html) {
-        for (const link of html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)) {
-            const css = await readAsset(link[1]);
-            html = html.replace(link[0], () => '<style>' + css.replace(/<\/(style)/gi, '<\\/$1') + '</style>');
-        }
-        for (const script of html.matchAll(/<script src="([^"]+)"><\/script>/g)) {
-            const js = await readAsset(script[1]);
-            html = html.replace(script[0], () => '<script>' + js.replace(/<\/(script)/gi, '<\\/$1') + '</script>');
+        const styles = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)">/g)];
+        const scripts = [...html.matchAll(/<script src="([^"]+)"(?: defer(?:="")?)?><\/script>/g)];
+        const assets = await Promise.all([...styles, ...scripts].map(async match => ({
+            tag: match[0],
+            body: await readAsset(match[1]),
+            kind: match[0].startsWith('<link') ? 'style' : 'script',
+        })));
+        for (const { tag, body, kind } of assets) {
+            // The source order is preserved even when requests finish out of order.
+            html = html.replace(tag, () => '<' + kind + '>' +
+                body.replace(/<\/(style|script)/gi, '<\\/$1') + '</' + kind + '>');
         }
         return html;
     }
@@ -698,7 +714,13 @@
         }
     }
     );
-    new ResizeObserver(drawCharts).observe(q('main'));
+    let mainWidth;
+    new ResizeObserver(([entry]) => {
+        const width = Math.floor(entry.contentRect.width);
+        if (mainWidth === width) return;
+        mainWidth = width;
+        scheduleCharts();
+    }).observe(q('main'));
     render();
     window.L2Dashboard = {
         replaceData(next, name, sheet, options = {}) {
