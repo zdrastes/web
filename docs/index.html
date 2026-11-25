@@ -3,9 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'">
   <title>Портал L2</title>
   <link rel="stylesheet" href="css/portal.css">
+  <style>
+    .portal-sections{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .tasks-tile{background:linear-gradient(140deg,#fff7ee,#f4e4fa);color:#423154}
+    .tasks-tile p{color:#655471}
+    .tasks-tile .art span{width:48px;height:48px;display:grid;place-items:center;border:1px solid #bda5ce;border-radius:14px;color:#603e7c;font-size:24px}
+    @media(max-width:920px){.portal-sections{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:680px){.portal-sections{grid-template-columns:1fr}}
+  </style>
 </head>
 <body>
   <header class="shell">
@@ -14,8 +22,8 @@
   </header>
   <main class="shell">
     <h1>Рабочий портал L2</h1>
-    <p class="intro">Выберите раздел, чтобы открыть отчёты или перейти в пространство сотрудника.</p>
-    <div class="grid">
+    <p class="intro">Отчёты по продуктам, расписание и задачи команды.</p>
+    <div class="grid portal-sections">
       <a class="tile analytics" href="analytics.html">
         <span class="orbit" aria-hidden="true"></span>
         <span class="art" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
@@ -27,8 +35,15 @@
         <span class="orbit" aria-hidden="true"></span>
         <span class="art" aria-hidden="true"><span>✦</span></span>
         <h2>Пространство сотрудника</h2>
-        <p>Отдельный раздел для будущих инструментов команды L2.</p>
+        <p>Смены, отпуска и график отчётов.</p>
         <span class="tile-action">Перейти в пространство <span class="arrow" aria-hidden="true">↗</span></span>
+      </a>
+      <a class="tile tasks-tile" href="tasks.html">
+        <span class="orbit" aria-hidden="true"></span>
+        <span class="art" aria-hidden="true"><span>✓</span></span>
+        <h2>Задачи команды</h2>
+        <p>Список задач из аналитики и поиск по ним.</p>
+        <span class="tile-action">Открыть задачи <span class="arrow" aria-hidden="true">↗</span></span>
       </a>
     </div>
   </main>
