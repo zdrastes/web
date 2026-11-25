@@ -283,6 +283,7 @@ if (demoLoginButton) demoLoginButton.hidden = !state.demoMode;
             renderProducts();
             renderProductForm();
             renderGroups();
+            await loadData();
         } catch (error) {
             settingsMessage.textContent = 'Не удалось сохранить проект: ' + error.message;
         }
@@ -309,6 +310,7 @@ if (demoLoginButton) demoLoginButton.hidden = !state.demoMode;
             settingsMessage.textContent = 'Проект удалён';
             renderProducts();
             renderGroups();
+            await loadData();
         } catch (error) {
             settingsMessage.textContent = 'Не удалось удалить проект: ' + error.message;
         }
@@ -541,6 +543,7 @@ if (demoLoginButton) demoLoginButton.hidden = !state.demoMode;
             renderGroups();
             renderNotes();
             settingsMessage.textContent = message;
+            await loadData();
         } catch (error) {
             settingsMessage.textContent = 'Не удалось обновить список меток: ' + error.message;
         }
