@@ -18,12 +18,9 @@
     h1{font-size:28px;font-weight:700;margin:0 0 6px;letter-spacing:-.035em}
     h2{font-size:18px;font-weight:600;margin:0;letter-spacing:-.022em}
     .subtitle{margin:0 0 20px}
-    .bento{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1fr);grid-template-areas:"hero hero metrics" "tasks tasks distribution";grid-template-rows:minmax(175px,auto) minmax(240px,auto);gap:16px}
+    .bento{display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,268px);grid-template-areas:"tasks metrics" "tasks distribution";grid-template-rows:auto 1fr;align-items:start;gap:16px}
     .card{position:relative;min-width:0;background:#FFFFFF;border-radius:20px;box-shadow:0 2px 12px rgba(16,24,40,.03);padding:20px}
-    .hero{grid-area:hero;overflow:hidden;isolation:isolate;background:linear-gradient(120deg,#7354b2,#686bc2 60%,#868bd1);color:#fff;display:flex;flex-direction:column;justify-content:center}
-    .hero p{margin:8px 0 0;max-width:75%;line-height:1.45;color:#fff}
-    .hero h2{font-size:24px}.hero svg{position:absolute;right:8px;bottom:0;width:145px;z-index:-1;opacity:.65}
-    .metrics{grid-area:metrics}.distribution{grid-area:distribution}
+    .metrics{grid-area:metrics}.distribution{grid-area:distribution;padding:14px}.distribution h2{font-size:16px}
     .tasks{grid-area:tasks}.card-icon{position:absolute;right:14px;top:14px;width:34px;height:34px}
     .metrics h2{padding-right:34px}
     .metrics dl{display:grid;gap:7px;margin:14px 0 0}
@@ -31,10 +28,9 @@
     .metrics dt{color:var(--muted);font-size:13px;line-height:1.5}.metrics dd{margin:0;font-weight:700;white-space:nowrap}
     .search{display:grid;gap:5px;margin:12px 0;color:#5e6673;font-size:13px}
     .search select{width:100%;border:0;border-radius:14px;padding:11px 12px;background:var(--soft);font:inherit;color:#1C1E21}
-    .status-chart{display:grid;gap:8px;padding:12px;background:#F3F5F8;border-radius:14px;margin:14px 0}
-    .status-chart h3{font-size:14px;margin:0 0 4px}
-    .status-row{display:grid;grid-template-columns:minmax(128px,1.25fr) minmax(32px,1fr) 2ch;align-items:center;gap:7px;font-size:12px}
-    .status-track{height:8px;border-radius:999px;background:#e7eaf0;overflow:hidden}
+    .status-chart{display:grid;gap:6px;margin:9px 0 0}
+    .status-row{display:grid;grid-template-columns:minmax(122px,1.8fr) minmax(25px,1fr) 2ch;align-items:center;gap:7px;font-size:12px}
+    .status-track{height:6px;border-radius:999px;background:#e7eaf0;overflow:hidden}
     .status-fill{height:100%;border-radius:inherit;background:var(--status-accent)}
     .table-scroll{max-width:100%;overflow-x:auto}
     .reason-table{width:100%;min-width:530px;border-collapse:collapse;text-align:left}
@@ -54,8 +50,8 @@
     .reason-name{overflow-wrap:anywhere;font-weight:600}.reason-detail{display:block;color:#686f7c;font-size:13px;margin-top:4px}
     .delta{font-size:12px;white-space:nowrap;border-radius:999px;padding:5px 8px;background:#f0ebfa;color:#5c418f}
     .delta.up{background:#fbeee9;color:#9e4c28}.delta.down{background:#e7f6ef;color:#21664d}
-    @media(max-width:780px){.bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"hero metrics" "tasks tasks" "distribution distribution";grid-template-rows:auto}}
-    @media(max-width:520px){.shell{width:calc(100% - 28px)}.bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"hero" "metrics" "tasks" "distribution"}.hero{min-height:145px}.hero svg{width:105px}.card{padding:16px}}
+    @media(max-width:780px){.bento{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"metrics distribution" "tasks tasks";grid-template-rows:auto}}
+    @media(max-width:520px){.shell{width:calc(100% - 28px)}.bento{grid-template-columns:minmax(0,1fr);grid-template-areas:"metrics" "tasks" "distribution"}.card{padding:16px}}
     @media(prefers-reduced-motion:reduce){.button{transition:none}}
   </style>
 </head>
@@ -66,11 +62,6 @@
     <h1>Задачи команды</h1>
     <p class="subtitle muted">Проект DEMO · синтетические данные</p>
     <div class="bento">
-      <section class="card hero" aria-labelledby="hero-title">
-        <h2 id="hero-title">Задачи проекта DEMO</h2>
-        <p id="week-context" role="status">Тестовый список задач проекта</p>
-        <svg viewBox="0 0 140 112" fill="none" aria-hidden="true"><circle cx="93" cy="65" r="43" fill="#D6CBFC" fill-opacity=".44"/><rect x="38" y="18" width="64" height="78" rx="13" fill="#E5DDFE"/><path d="M53 43l5 5 9-10m-14 22 5 5 9-10M75 44h12M75 61h12M54 77h33" stroke="#6B57AA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </section>
       <section class="card metrics" aria-labelledby="metrics-title">
         <h2 id="metrics-title">Сводка по задачам</h2>
         <svg class="card-icon" viewBox="0 0 36 36" aria-hidden="true"><rect width="36" height="36" rx="11" fill="#EFEAFC"/><path d="M11 24v-5m7 5V12m7 12v-8" stroke="#7961B2" stroke-width="2.2" stroke-linecap="round"/></svg>
