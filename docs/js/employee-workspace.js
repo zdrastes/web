@@ -190,6 +190,7 @@
     $('open-upcoming-report').hidden = !report;
   }
   function render() {
+    renderAccount();
     renderNotices();
     renderUpcomingReport();
     for (const page of pages) {
@@ -478,6 +479,7 @@
     }));
   }
   bell.addEventListener('click', () => {
+    setAccountOpen(false);
     if (panel.hidden) renderNotices();
     toggleNotices(panel.hidden);
   });
@@ -501,6 +503,67 @@
       bell.focus();
     }
   });
+  const accountButton = $('account-button');
+  const accountPanel = $('account-panel');
+  const sessionKey = 'zdrastes.web.demo.employee-signed-out';
+  function setAccountOpen(open) {
+    if (!accountButton) return;
+    accountPanel.hidden = !open;
+    accountButton.setAttribute('aria-expanded', String(open));
+  }
+  function renderAccount() {
+    if (!accountButton) return;
+    const name = people[view.person].name;
+    const initials = name.split(/\s+/).map(part => part[0]).slice(0, 2).join('');
+    $('account-initials').textContent = initials;
+    $('account-name').textContent = name;
+    accountButton.setAttribute('aria-label', 'Аккаунт: ' + name);
+  }
+  function showSession(signedOut) {
+    setAccountOpen(false);
+    toggleNotices(false);
+    $('workspace-actions').hidden = signedOut;
+    $('workspace-main').hidden = signedOut;
+    $('workspace-signin').hidden = !signedOut;
+  }
+  if (accountButton) {
+    accountButton.addEventListener('click', () => {
+      toggleNotices(false);
+      setAccountOpen(accountPanel.hidden);
+    });
+    $('account-logout').addEventListener('click', () => {
+      showSession(true);
+      try {
+        sessionStorage.setItem(sessionKey, '1');
+      } catch {
+        $('account-login').focus();
+        return;
+      }
+      location.assign('./');
+    });
+    $('account-login').addEventListener('click', () => {
+      try { sessionStorage.removeItem(sessionKey); } catch {}
+      showSession(false);
+      accountButton.focus();
+    });
+    function restoreSession() {
+      let signedOut = false;
+      try { signedOut = sessionStorage.getItem(sessionKey) === '1'; } catch {}
+      showSession(signedOut);
+    }
+    window.addEventListener('pageshow', restoreSession);
+    document.addEventListener('click', event => {
+      if (!accountPanel.hidden && !accountPanel.contains(event.target) &&
+          !accountButton.contains(event.target)) setAccountOpen(false);
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !accountPanel.hidden) {
+        setAccountOpen(false);
+        accountButton.focus();
+      }
+    });
+    restoreSession();
+  }
   const help = $('workspace-help');
   if (help) {
     help.addEventListener('click', event => {
