@@ -2,7 +2,7 @@
 <html lang="ru">
     <head>
         <meta charset="utf-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
         <meta name="viewport" content="width=device-width,initial-scale=1">
         <meta name="description" content="Динамика обращений по продуктам и причинам: количество и проценты по неделям.">
         <title>Аналитика L2</title>
@@ -45,56 +45,6 @@
                 #analytics-l2-dashboard .week-table th,#analytics-l2-dashboard .week-table td{white-space:nowrap}
             }
         </style>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-        <style>
-:root{color-scheme:light;--saas-bg:#F4F5F8;--saas-border:#ECEEF2;--saas-ink:#111827;--saas-secondary:#8C93A0;--saas-mint:#E8F8F0;--saas-indigo:#EEF2FF}
-body{background:var(--saas-bg);color:var(--saas-ink);font-family:Inter,system-ui,sans-serif}
-#ld-demo-banner{background:transparent!important;color:#606978!important;text-align:left!important;max-width:1440px;margin:auto;padding:10px 20px 0!important}
-#analytics-l2-dashboard{background:transparent;color:var(--saas-ink)}
-#analytics-l2-dashboard main,#analytics-l2-dashboard .topbar{max-width:1440px;margin-inline:auto}
-#analytics-l2-dashboard .topbar{background:transparent;border:0;box-shadow:none;position:static}
-#analytics-l2-dashboard .topbar .brand-icon{background:#EEF2FF;color:#4F46E5;border-radius:14px}
-#analytics-l2-dashboard .topbar .source button,#analytics-l2-dashboard .report-tabs button{background:#fff;border:1px solid var(--saas-border);color:var(--saas-ink);border-radius:999px;box-shadow:none}
-#analytics-l2-dashboard .report-tabs button[aria-pressed=true]{border-color:#273040;background:white;color:#111827}
-#analytics-l2-dashboard .topbar button:hover,#analytics-l2-dashboard .report-tabs button:hover{background:#f8f8fc}
-.saas-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,3fr);align-items:start;gap:16px}
-.saas-main,.saas-side{min-width:0}
-.saas-side{display:grid;gap:16px}
-.saas-card,#analytics-l2-dashboard .panel,#analytics-l2-dashboard .week-pulse,#analytics-l2-dashboard .week-driver,#analytics-l2-dashboard .week-ranking-panel,#analytics-l2-dashboard .week-all-panel{background:#fff;border:1px solid var(--saas-border);border-radius:24px;box-shadow:none}
-.saas-card{padding:18px;margin-bottom:16px}
-.saas-side .saas-card{margin:0}
-.saas-card h2,#analytics-l2-dashboard .week-section-head h2{font-size:16px;font-weight:600;color:var(--saas-ink);margin:0}
-.saas-card p{font-size:13px;color:#626c7d;line-height:1.5;margin:7px 0}
-#analytics-l2-dashboard .pulse-number,#analytics-l2-dashboard .pulse-previous strong,#analytics-l2-dashboard .pulse-delta strong,#analytics-l2-dashboard .driver-change{font-size:clamp(28px,3vw,32px);font-weight:750;color:var(--saas-ink)}
-#analytics-l2-dashboard .week-stat-label,#analytics-l2-dashboard .week-stat-context{font-size:12px;color:var(--saas-secondary)}
-#analytics-l2-dashboard .delta-badge,#analytics-l2-dashboard .tag,#analytics-l2-dashboard .rank-group-delta{border-radius:999px;padding:4px 8px;background:#EEF2FF;color:#4F46E5}
-#analytics-l2-dashboard .delta-badge.rise,#analytics-l2-dashboard .rank-group-delta.rise{background:#E8F8F0;color:#16A34A}
-#analytics-l2-dashboard .delta-badge.fall,#analytics-l2-dashboard .rank-group-delta.fall{background:#FDECEC;color:#DC2626}
-#analytics-l2-dashboard .period input,#analytics-l2-dashboard .period select{border-radius:999px;background:#EEF2FF;color:#4F46E5;border-color:transparent}
-#analytics-l2-dashboard .week-table th,#analytics-l2-dashboard .week-table td,#analytics-l2-dashboard .table-scroll th,#analytics-l2-dashboard .table-scroll td{border:0;border-bottom:1px solid #F1F3F6;padding-block:12px}
-#analytics-l2-dashboard .week-table thead{background:#fafbfc}
-#saas-dot-legend{display:flex;gap:8px;flex-wrap:wrap}
-.saas-chip{display:inline-block;font-size:12px;border-radius:999px;padding:5px 8px;max-width:100%;overflow-wrap:anywhere}
-.saas-chip.mint{background:#E8F8F0;color:#157346}.saas-chip.indigo{background:#EEF2FF;color:#4F46E5}
-.saas-dot-grid{display:grid;gap:7px;margin-top:14px}
-.saas-dot-week{display:grid;justify-items:center;min-width:0;gap:4px}
-.saas-dot-pair{display:flex;gap:3px;align-items:end;justify-content:center;min-height:102px}
-.saas-dot-series{display:grid;gap:3px}
-.saas-dot{width:clamp(4px,.75vw,9px);height:clamp(4px,.75vw,9px);border-radius:50%;background:#58c991}
-.saas-dot-series.indigo .saas-dot{background:#7770e8}
-.saas-dot-week strong,.saas-dot-week span{font-size:11px;color:#566175;text-align:center;overflow-wrap:anywhere}
-.saas-dot-week[aria-current=true]{background:#f7f8ff;border-radius:10px;padding-bottom:4px}
-.saas-assistant{background:linear-gradient(180deg,#FFFFFF,#EEF0FF)}
-.saas-actions{display:grid;gap:8px;margin:14px 0}
-.saas-actions button{border:1px solid #ECEEF2;border-radius:13px;padding:10px;background:#fff;color:#26314a;text-align:left;font:inherit;cursor:pointer}
-.saas-actions button:hover{border-color:#b1abeb}
-#saas-answer{min-height:44px;white-space:pre-wrap;overflow-wrap:anywhere;color:#26314a}
-#saas-assistant-form{display:flex;gap:6px}
-#saas-assistant-form input{width:100%;min-width:0;padding:9px;border-radius:12px;border:1px solid #dfe2f4;background:#fff;font:inherit}
-#saas-assistant-form button{border:0;border-radius:12px;background:#4F46E5;color:#fff;padding:8px 11px;cursor:pointer}
-@media(max-width:900px){.saas-grid{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:450px){.saas-card{padding:13px}.saas-dot-grid{gap:3px}.saas-dot-pair{min-height:71px;gap:2px}.saas-dot-series{gap:2px}}
-</style>
     </head>
     <body>
 <div id="ld-demo-banner" style="background:#1f6feb;color:#fff;text-align:center;padding:6px 12px;font:600 13px/1.4 sans-serif"><a href="./" style="color:inherit;margin-right:16px">← Портал L2</a> ДЕМО-ВЕРСИЯ · данные синтетические</div>
@@ -156,17 +106,9 @@ body{background:var(--saas-bg);color:var(--saas-ink);font-family:Inter,system-ui
                     <button type="button" data-view="weekSummary" aria-pressed="true">Краткие итоги</button>
                     <button type="button" data-view="overview" aria-pressed="false">Динамика</button>
                 </nav>
-                <div class="saas-grid">
-                  <div class="saas-main">
                 <section id="week-summary-view" aria-label="Краткие итоги недели">
                     <p id="week-takeaway" class="week-takeaway" aria-live="polite"></p>
                     <div id="week-summary-kpis" class="week-summary-kpis"></div>
-                    <section class="saas-card" aria-labelledby="saas-trend-title">
-                        <h2 id="saas-trend-title">Динамика обращений</h2>
-                        <p>Последние недели · одна точка соответствует примерно <strong id="saas-dot-scale">—</strong> обращ.</p>
-                        <div id="saas-dot-legend"></div>
-                        <div id="saas-dot-grid" class="saas-dot-grid" role="list" aria-label="Обращения по неделям"></div>
-                    </section>
                     <div class="week-rankings">
                         <section class="week-ranking-panel">
                             <div class="week-section-head">
@@ -280,24 +222,6 @@ body{background:var(--saas-bg);color:var(--saas-ink);font-family:Inter,system-ui
                     <span id="source-meta"></span>
                 </footer>
                 <div class="sr-only" id="ld-status" aria-live="polite"></div>
-                  </div>
-                  <aside class="saas-side">
-                    <section class="saas-card saas-assistant" aria-labelledby="saas-ai-title">
-                      <h2 id="saas-ai-title">AI-ассистент</h2>
-                      <p>Деморежим · ответы по данным отчёта</p>
-                      <div class="saas-actions">
-                        <button type="button" data-saas-prompt="summary">Сводка недели</button>
-                        <button type="button" data-saas-prompt="project">Какой продукт изменился сильнее?</button>
-                        <button type="button" data-saas-prompt="data">Проверить расхождения</button>
-                      </div>
-                      <p id="saas-answer" role="status"></p>
-                      <form id="saas-assistant-form">
-                        <input id="saas-question" aria-label="Вопрос об отчёте" placeholder="Спросить об отчёте" maxlength="160" required>
-                        <button type="submit" aria-label="Задать вопрос">↗</button>
-                      </form>
-                    </section>
-                  </aside>
-                </div>
             </main>
         </div>
         <script type="application/json" id="ld-source-data">
@@ -465,130 +389,6 @@ body{background:var(--saas-bg);color:var(--saas-ink);font-family:Inter,system-ui
                     status.textContent = 'Не удалось сохранить задачу в браузере.';
                 }
             });
-        })();
-        </script>
-    <script>
-        (() => {
-            const byId = id => document.getElementById(id);
-            const grid = byId('saas-dot-grid');
-            const answer = byId('saas-answer');
-            const format = new Intl.NumberFormat('ru-RU');
-            function read() {
-                const dashboard = window.L2Dashboard;
-                if (!dashboard) return null;
-                const data = dashboard.getData();
-                const view = dashboard.getView();
-                const i = data.weeks.indexOf(view.week);
-                if (i < 0) return null;
-                const total = index => {
-                    const counts = data.products.map(product => product.counts[index]);
-                    return counts.every(Number.isFinite) ? counts.reduce((sum, count) => sum + count, 0) : null;
-                };
-                return { data, view, i, total };
-            }
-            function chip(label, color) {
-                const node = document.createElement('span');
-                node.className = 'saas-chip ' + color;
-                node.textContent = label;
-                return node;
-            }
-            function render() {
-                const context = read();
-                if (!context) return;
-                const { data, view, i, total } = context;
-                const product = data.products.find(item => item.name === view.project);
-                const weeks = data.weeks.slice(Math.max(0, i - 7), i + 1);
-                const from = i + 1 - weeks.length;
-                const values = weeks.map((week, offset) => ({
-                    week,
-                    counts: [total(from + offset), product?.counts[from + offset] ?? null],
-                }));
-                const scale = Math.max(1, Math.ceil(Math.max(0, ...values.flatMap(item => item.counts)) / 10));
-                byId('saas-dot-scale').textContent = format.format(scale);
-                const legend = [chip('Все продукты', 'mint')];
-                if (product) legend.push(chip(product.name, 'indigo'));
-                byId('saas-dot-legend').replaceChildren(...legend);
-                grid.style.gridTemplateColumns = 'repeat(' + weeks.length + ', minmax(0,1fr))';
-                grid.replaceChildren(...values.map(({ week, counts }) => {
-                    const item = document.createElement('div');
-                    item.className = 'saas-dot-week';
-                    item.setAttribute('role', 'listitem');
-                    item.setAttribute('aria-current', String(week === view.week));
-                    const pair = document.createElement('div');
-                    pair.className = 'saas-dot-pair';
-                    pair.setAttribute('aria-hidden', 'true');
-                    counts.forEach((value, index) => {
-                        const series = document.createElement('div');
-                        series.className = 'saas-dot-series ' + (index ? 'indigo' : 'mint');
-                        const dots = value > 0 ? Math.max(1, Math.round(value / scale)) : 0;
-                        for (let dot = 0; dot < dots; dot += 1) {
-                            const mark = document.createElement('span');
-                            mark.className = 'saas-dot';
-                            series.append(mark);
-                        }
-                        pair.append(series);
-                    });
-                    const label = document.createElement('strong');
-                    label.textContent = week;
-                    const number = document.createElement('span');
-                    number.textContent = counts.map(value => value == null ? '—' : format.format(value)).join(' / ');
-                    number.setAttribute('aria-label', 'Всего: ' + (counts[0] ?? 'нет данных') +
-                        (product ? ', ' + product.name + ': ' + (counts[1] ?? 'нет данных') : ''));
-                    item.append(pair, label, number);
-                    return item;
-                }));
-            }
-            function respond(topic) {
-                const context = read();
-                if (!context) { answer.textContent = 'Данные отчёта загружаются.'; return; }
-                const { data, view, i, total } = context;
-                const prefix = view.week + ' · ';
-                if (topic === 'summary') {
-                    const current = total(i);
-                    const previous = i > 0 ? total(i - 1) : null;
-                    answer.textContent = prefix + (current == null ? 'Нет полного итога по продуктам.' :
-                        'Обращений: ' + format.format(current) + '. ' +
-                        (previous == null ? 'Сравнение недоступно.' : 'На предыдущей неделе: ' + format.format(previous) + '.'));
-                } else if (topic === 'project') {
-                    const peak = i > 0 ? data.products.filter(item =>
-                        Number.isFinite(item.counts[i]) && Number.isFinite(item.counts[i - 1]))
-                        .map(item => ({ name: item.name, change: item.counts[i] - item.counts[i - 1] }))
-                        .sort((a,b) => Math.abs(b.change) - Math.abs(a.change))[0] : null;
-                    answer.textContent = prefix + (peak ? peak.name + ': ' + (peak.change > 0 ? '+' : '') +
-                        format.format(peak.change) + ' обращ. к предыдущей неделе.' : 'Сравнение недоступно.');
-                } else if (topic === 'data') {
-                    const issues = data.products.filter(item => {
-                        const values = item.groups.map(group => group.counts[i]).filter(Number.isFinite);
-                        return values.length && Number.isFinite(item.counts[i]) &&
-                            values.reduce((sum, count) => sum + count, 0) !== item.counts[i];
-                    });
-                    answer.textContent = prefix + (issues.length ?
-                        'Итог отличается от суммы групп: ' + issues.map(item => item.name).join(', ') + '.' :
-                        'В доступных итогах расхождений с суммой групп не найдено.');
-                } else {
-                    answer.textContent = 'Можно спросить о количестве обращений, изменениях по продуктам или расхождениях.';
-                }
-            }
-            document.querySelectorAll('[data-saas-prompt]').forEach(button =>
-                button.addEventListener('click', () => respond(button.dataset.saasPrompt)));
-            byId('saas-assistant-form').addEventListener('submit', event => {
-                event.preventDefault();
-                const question = byId('saas-question').value.toLowerCase();
-                respond(/расхожд|групп/.test(question) ? 'data' :
-                    /продукт|сильнее|изменил/.test(question) ? 'project' :
-                    /сводк|недел|сколько|обращен/.test(question) ? 'summary' : '');
-            });
-            let frame = 0;
-            function refresh() {
-                if (frame) return;
-                frame = requestAnimationFrame(() => {
-                    frame = 0;
-                    render();
-                });
-            }
-            new MutationObserver(refresh).observe(byId('ld-status'), { childList: true });
-            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', refresh, { once: true });
-            else refresh();
         })();
         </script>
     </body>
