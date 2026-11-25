@@ -152,20 +152,7 @@
         q('#week-takeaway').textContent = takeaway;
         const sourceIssues = projects.flatMap(p => [i - 1, i].filter(j => j >= 0).flatMap(j => dataIssues(p, j, false).map(issue => label(p.name) + ' · ' + issue)));
         q('#week-summary-warning').hidden = !sourceIssues.length;
-        const warning = q('#week-summary-warning');
-        const details = document.createElement('details');
-        const summary = document.createElement('summary');
-        summary.textContent = 'Расхождения в данных · ' + sourceIssues.length;
-        details.append(summary);
-        const list = document.createElement('ul');
-        for (const issue of sourceIssues) {
-            const row = document.createElement('li');
-            row.textContent = issue;
-            list.append(row);
-        }
-        details.append(list);
-        details.open = Boolean(warning.querySelector('details[open]'));
-        warning.replaceChildren(details);
+        q('#week-summary-warning').textContent = sourceIssues.join('. ') + (sourceIssues.length ? '. Итоги и проценты показаны как есть.' : '');
         q('#week-summary-kpis').innerHTML = `<section class="week-pulse"><div class="pulse-current"><div class="week-stat-label">Всего обращений · ${safe(state.week)}</div><div class="pulse-number">${n(total)}<span>обращений</span></div><div class="week-stat-context">${projects.length} проектов · сумма итогов</div></div><div class="pulse-previous"><div class="week-stat-label">${prior ? 'Было на ' + safe(prior) : 'Прошлая неделя'}</div><strong>${n(previous)}</strong><span class="week-stat-context">Тот же состав проектов</span></div><div class="pulse-delta"><div class="week-stat-label">Изменение за неделю</div><strong class="${d > 0 ? 'rise' : d < 0 ? 'fall' : ''}">${signed(d)}<span> шт.</span></strong><span class="delta-badge ${d > 0 ? 'rise' : d < 0 ? 'fall' : ''}">${prior ? pct(total, previous) : 'Нет сравнения'}</span></div></section><section class="week-driver"><div class="week-stat-label">${driver && d !== 0 ? 'Вклад в изменение' : 'Самый заметный сдвиг'}</div>${focusProject ? `<button type="button" class="week-open" data-project="${safe(focusProject.p.name)}" title="Открыть динамику за выбранную неделю">${safe(label(focusProject.p.name))}<span aria-hidden="true">↗</span></button><div class="driver-change ${focusProject.d > 0 ? 'rise' : 'fall'}">${signed(focusProject.d)} <span>обращений</span></div><div class="week-stat-context">${n(focusProject.p.counts[i - 1])} → ${n(focusProject.p.counts[i])} · ${pct(focusProject.p.counts[i], focusProject.p.counts[i - 1])}</div>` : '<p class="week-stat-context">Нет изменений для сравнения</p>'}</section>`;
         function ranking(sign) {
             if (!prior)
@@ -201,8 +188,6 @@
         const i = index()
           , rows = reasons();
         q('#legend').innerHTML = legendMarkup(rows, i, 'Выделить линию');
-        const task = q('#ld-reason-task');
-        if (task) task.hidden = !group().reasons[state.reason];
         q('#graph-note').textContent = state.reason == null ? 'Все причины · Нажмите на название справа, чтобы выделить линию' : 'Выделена: ' + note(group().reasons[state.reason]?.name || '') + '. Повторное нажатие покажет все линии.';
     }
     function renderProblemLegend() {
@@ -237,9 +222,8 @@
           , parts = [];
         if (details && groups.length && !valid.length)
             parts.push(weeks[j] + ': детализации по группам нет');
-        else if (valid.length && p.counts[j] != null && sum !== p.counts[j])
-            parts.push(weeks[j] + ': сумма групп ' + n(sum) + ', итог проекта ' + n(p.counts[j]) +
-                ', разница (итог минус группы) ' + signed(p.counts[j] - sum));
+        else if (valid.length && sum !== p.counts[j])
+            parts.push(weeks[j] + ': сумма групп ' + n(sum) + ', итог проекта ' + n(p.counts[j]));
         for (const r of [p, ...groups])
             if (rates(r)[j] > 1)
                 parts.push(weeks[j] + ': ' + (r === p ? 'процент проекта' : r.name) + ' ' + rate(rates(r)[j]) + ' — выше 100%');
@@ -737,28 +721,6 @@
                 state.group = 0;
             render();
             save();
-        },
-        getTaskContext() {
-            const p = project();
-            const reason = state.view === 'overview' ? group().reasons[state.reason] : null;
-            if (!reason) return null;
-            const i = index();
-            const current = reason.counts[i];
-            const previous = i > 0 ? reason.counts[i - 1] : null;
-            const change = delta(current, previous);
-            const reasonLabel = note(reason.name);
-            return {
-                title: ('Разобрать причину «' + reasonLabel + '» в ' + label(p.name) + ' за ' + state.week).slice(0, 120),
-                description: [
-                    'Проект: ' + label(p.name),
-                    'Группа: ' + label(group().name),
-                    'Неделя: ' + state.week,
-                    'Причина: ' + reasonLabel,
-                    'Обращений: ' + n(current),
-                    change == null ? 'Сравнение с прошлой неделей недоступно.' :
-                        'Изменение к ' + weeks[i - 1] + ': ' + signed(change) + ' шт. (' + pct(current, previous) + ')',
-                ].join('\n').slice(0, 1200),
-            };
         },
         getData() {
             return data;
