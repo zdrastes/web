@@ -156,19 +156,12 @@
     <div id="picker-options"></div>
     <p id="picker-message" class="muted" role="status"></p>
   </dialog>
+  <script src="js/task-assignments.js?v=1"></script>
   <script>
     (() => {
       const $ = id => document.getElementById(id);
-      const tasks = [
-        { id: 'DEMO-101', title: 'Разобрать повторные обращения по интеграции', tag: 'Интеграция', status: 'open', date: '2026-11-17' },
-        { id: 'DEMO-102', title: 'Исправить дублирование записей при повторной синхронизации', tag: 'Синхронизация', status: 'dev', date: '2026-11-18' },
-        { id: 'DEMO-103', title: 'Пересчитать итог по обращениям за неделю', tag: 'Отчётность', status: 'recalc', date: '2026-11-19' },
-        { id: 'DEMO-104', title: 'Проверить исправление ошибки выгрузки отчёта', tag: 'Выгрузка', status: 'fix', date: '2026-11-20' },
-        { id: 'DEMO-105', title: 'Уточнить сценарий ошибки доступа к проекту', tag: 'Доступ', status: 'open', date: '2026-11-23' },
-        { id: 'DEMO-106', title: 'Убрать ошибку при переключении фильтра', tag: 'Интерфейс', status: 'dev', date: '2026-11-24' },
-        { id: 'DEMO-107', title: 'Сверить данные по закрытым обращениям', tag: 'Данные', status: 'recalc', date: '2026-11-25' },
-        { id: 'DEMO-108', title: 'Проверить загрузку отчёта после обновления', tag: 'Отчётность', status: 'fix', date: '2026-11-26' },
-      ];
+      const assignments = window.L2TaskAssignments;
+      const tasks = assignments.projectTasks;
       const staffTasks = [
         ['Анна Волкова', ['Сверить сводку по обращениям', 'Подготовить заметки к встрече команды']],
         ['Илья Орлов', ['Проверить журнал синхронизации', 'Описать шаги воспроизведения ошибки']],
@@ -184,12 +177,15 @@
       })));
       const views = {
         project: ['Задачи проекта', 'Проект DEMO · синтетические данные'],
-        today: ['Мои задачи на сегодня', 'Все открытые задачи проекта DEMO'],
+        today: ['Мои задачи на сегодня', 'Открытые задачи DEMO, назначенные выбранному сотруднику'],
         team: ['Мои задачи командные', 'Тестовые задачи выбранного сотрудника'],
       };
-      let taskView = 'project';
+      const params = new URLSearchParams(location.search);
+      let taskView = Object.hasOwn(views, params.get('view')) ? params.get('view') : 'project';
       const employeeSelect = $('task-employee');
       staffTasks.forEach(([name], i) => employeeSelect.add(new Option(name, i)));
+      const requestedEmployee = params.get('employee');
+      if (staffTasks.some((_, i) => String(i) === requestedEmployee)) employeeSelect.value = requestedEmployee;
       const viewButtons = document.querySelectorAll('[data-task-view]');
       const labels = {
         open: 'Открытые',
@@ -199,12 +195,8 @@
       };
       const dailyLabels = { waiting: 'Ждёт действия', closed: 'Закрыто', moved: 'Перенесено' };
       const statusLabels = () => taskView === 'today' ? dailyLabels : labels;
-      const dailyKey = 'zdrastes.web.demo.daily-task-actions.v1';
-      let dailyActions = {};
-      try {
-        const stored = JSON.parse(localStorage.getItem(dailyKey));
-        if (stored && typeof stored === 'object' && !Array.isArray(stored)) dailyActions = stored;
-      } catch {}
+      const dailyKey = assignments.dailyActionKey;
+      let dailyActions = assignments.readMap(dailyKey);
       const dayStatus = task => Object.hasOwn(dailyLabels, dailyActions[task.id]?.status)
         ? dailyActions[task.id].status : 'waiting';
       const displayStatus = task => taskView === 'today' ? dayStatus(task) : getStatus(task);
@@ -253,12 +245,7 @@
       const sortButtons = document.querySelectorAll('[data-sort]');
       let sortKey = 'status';
       let direction = 1;
-      const storageKey = 'zdrastes.web.demo.project-tasks.v1';
-      let saved = {};
-      try {
-        const stored = JSON.parse(localStorage.getItem(storageKey));
-        if (stored && typeof stored === 'object' && !Array.isArray(stored)) saved = stored;
-      } catch {}
+      const saved = assignments.readMap(assignments.projectStatusKey);
       const getStatus = task => Object.hasOwn(labels, saved[task.id]) ? saved[task.id] : task.status;
       const tagKey = 'zdrastes.web.demo.project-task-tags.v1';
       const tags = [...new Set([...tasks, ...teamTasks].map(task => task.tag))].sort(collator.compare);
@@ -274,7 +261,7 @@
       const filters = { status: '', tag: '' };
       const resetFilters = $('reset-filters');
       function visibleTasks() {
-        if (taskView === 'today') return tasks.filter(task => getStatus(task) === 'open');
+        if (taskView === 'today') return assignments.assignedToday(Number(employeeSelect.value));
         if (taskView === 'team') return teamTasks.filter(task => task.employee === Number(employeeSelect.value));
         return tasks;
       }
@@ -448,7 +435,7 @@
         const [title, subtitle] = views[taskView];
         $('tasks-heading').textContent = title;
         $('tasks-subtitle').textContent = subtitle;
-        $('task-employee-field').hidden = taskView !== 'team';
+        $('task-employee-field').hidden = taskView === 'project';
         document.querySelector('.bento').classList.toggle('daily-view', taskView === 'today');
         $('daily-feedback').textContent = '';
         for (const button of viewButtons) {
