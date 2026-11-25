@@ -1,4 +1,4 @@
-"""Модели SQLite и работа с базой (план, раздел 3)."""
+"""Модели SQLite и работа с базой."""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -22,31 +22,32 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 
 Base = declarative_base()
 
-# Стартовые группы = контуры текущего дашборда (раздел «все контуры»).
-DEFAULT_GROUP_NAMES = ("ПМ|МС", "СГТ", "Финансы", "ВЭД", "FMS", "ЭДО", "YMS")
+# Стартовые группы = контуры дашборда (раздел «все контуры»).
+DEFAULT_GROUP_NAMES = (
+    "Операции", "Продукт", "Разработка", "Поддержка",
+    "Инфраструктура", "Аналитика", "Отчётность",
+)
 
 # Стартовые расшифровки меток: показываются на дашборде вместо «сырого» имени метки.
 # Админ может изменить любую расшифровку в «Настройках меток»; пустая строка = без расшифровки.
 DEFAULT_LABEL_NOTES = {
-    "ls_redirect_trs": "Перенаправление к логистам для удаления заявки",
-    "ls_trs_12": "Проблемы с заявками 12 типа (спецзаявки)",
+    "demo_access": "Доступ к задачам демо-проекта",
+    "demo_report": "Замечания к отчётам и данным",
 }
 
-# Стартовые продукты. SPL — текущий проект логистики; WMS и Trans — проекты ботов.
-# Коды чтения задач — из команд otchet ботов (WMS/services/otchet.py, trans/services/otchet.py):
-# выборка GET /public-api/v1/issues идёт по кодам (namespace_code/project_code),
-# а alias'ы (transport-logistic-support/…) годятся только для создания задач.
+# Стартовые продукты: демо-проект для публичной версии. Коды чтения задач
+# настраиваются в .env (TRACKER_NAMESPACE / TRACKER_PROJECT).
 DEFAULT_PRODUCTS = (
-    {"name": "SPL", "namespace": "LOGSUPPORT", "project_code": "SPL"},
-    {"name": "WMS", "namespace": "LOGSUPPORT", "project_code": "WMS"},
-    {"name": "Trans", "namespace": "LOGSUPPORT", "project_code": "LTS"},
+    {"name": "DEMO", "namespace": "demo-namespace", "project_code": "DEMO"},
+    {"name": "WMS", "namespace": "demo-namespace", "project_code": "DEMO-WMS"},
+    {"name": "Trans", "namespace": "demo-namespace", "project_code": "DEMO-LTS"},
 )
 
 # В ранних версиях в стартовые продукты попадали alias'ы создания задач — по ним
 # выборка задач не возвращает ничего (см. fix_legacy_product_codes).
 LEGACY_PRODUCT_CODES = {
-    ("transport-logistic-support", "wh-wms-support"): ("LOGSUPPORT", "WMS"),
-    ("transport-logistic-support", "transportation-l2-support"): ("LOGSUPPORT", "LTS"),
+    ("legacy-namespace", "legacy-wms"): ("demo-namespace", "DEMO-WMS"),
+    ("legacy-namespace", "legacy-lts"): ("demo-namespace", "DEMO-LTS"),
 }
 
 # Функции, выдаваемые пользователю чекбоксами в карточке (вкладка «Пользователи»);
@@ -175,7 +176,7 @@ class IssueCache(Base):
 
     __tablename__ = "issues_cache"
 
-    # Составной ключ: трекер нумерует задачи внутри проекта (SPL-100, WMS-3, …)
+    # Составной ключ: трекер нумерует задачи внутри проекта (DEMO-100, …)
     product_id = Column(Integer, ForeignKey("products.id"), primary_key=True)
     key = Column(String(100), primary_key=True)
     summary = Column(String(500), nullable=False, default="")
@@ -217,7 +218,7 @@ class SiteUser(Base):
     __tablename__ = "site_users"
 
     username = Column(String(100), primary_key=True)
-    # Историческая колонка парольного входа; после перехода на Keycloak не
+    # Историческая колонка парольного входа; после перехода на SSO не
     # используется, оставлена, чтобы старые базы (NOT NULL без дефолта)
     # принимали вставку новой строки без миграции.
     password_hash = Column(String(200), nullable=False, default="")
@@ -272,9 +273,9 @@ def init_db(engine: Engine, default_products: list[dict[str, str]] | None = None
 
 
 def fix_legacy_product_codes(engine: Engine) -> None:
-    """Базы, созданные с alias'ами создания задач в продуктах WMS/Trans.
+    """Базы, созданные с alias'ами создания задач в продуктах.
 
-    Задачи читаются по кодам проектов (GET /public-api/v1/issues), поэтому по alias'ам
+    Задачи читаются по кодам проектов, поэтому по alias'ам
     синхронизация всегда получала пустой список. Меняем только строки с точной прежней
     связкой — правки администратора не трогаем.
     """
@@ -287,7 +288,7 @@ def fix_legacy_product_codes(engine: Engine) -> None:
 
 
 def seed_default_products(engine: Engine, specs: list[dict[str, str]] | None = None) -> None:
-    """Первый старт: SPL (обычно из .env) + проекты ботов WMS и Trans."""
+    """Первый старт: продукт из настроек (.env) + демо-продукты из DEFAULT_PRODUCTS."""
     with session_factory(engine)() as session:
         if session.query(Product).first() is not None:
             return
@@ -374,10 +375,10 @@ def seed_default_groups(engine: Engine) -> None:
 
 
 def seed_admins(engine: Engine, admins: frozenset[str]) -> None:
-    """Первый старт: логины из ADMINS (Keycloak) переезжают в базу админами.
+    """Первый старт: логины из ADMINS переезжают в базу админами.
 
     После первого старта входящими пользователями управляет вкладка «Пользователи»:
-    новый пользователь Keycloak создаётся автоматически (provision_oidc_user).
+    новый пользователь создаётся автоматически (provision_oidc_user).
     """
     with session_factory(engine)() as session:
         if session.query(SiteUser).first() is not None:
@@ -395,10 +396,10 @@ def seed_admins(engine: Engine, admins: frozenset[str]) -> None:
 
 
 def provision_oidc_user(session, claims: dict[str, Any], admins: frozenset[str]) -> SiteUser:
-    """Пользователь для входа через Keycloak; при первом входе создаётся сам.
+    """Пользователь для входа через SSO; при первом входе создаётся сам.
 
     Логин из ADMINS получает полный админ-пресет, остальные — viewer («dashboard»):
-    доступ к клиенту Keycloak и так ограничен заявкой, а точные функции выдаёт
+    доступ к клиенту SSO и так ограничен заявкой, а точные функции выдаёт
     админ на вкладке «Пользователи». commit делает вызывающий код.
     """
     username = str(claims.get("username") or "").strip()
@@ -691,7 +692,7 @@ def _validated_role(role: str) -> str:
 def create_user(session, spec: dict[str, Any]) -> None:
     """Создание пользователя (POST /api/users); логин обязателен.
 
-    Пользователь входит через Keycloak под этим логином; запись здесь задаёт
+    Пользователь входит через SSO под этим логином; запись здесь задаёт
     его функции. permissions не заданы явно → пресет роли; [] = полностью без функций.
     """
     username = str(spec.get("username") or "").strip()

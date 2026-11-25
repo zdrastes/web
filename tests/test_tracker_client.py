@@ -32,15 +32,15 @@ def test_pagination_walks_all_pages(monkeypatch):
         calls.append(str(request.url.params["offset"]))
         offset = int(request.url.params["offset"])
         pages = {
-            0: [{"key": "SPL-1"}, {"key": "SPL-2"}],
-            2: [{"key": "SPL-3"}],
+            0: [{"key": "DEMO-1"}, {"key": "DEMO-2"}],
+            2: [{"key": "DEMO-3"}],
         }
         return httpx.Response(200, json={"issues": pages[offset]})
 
     with make_client(handler) as client:
         issues = client.get_all_issues()
 
-    assert [issue["key"] for issue in issues] == ["SPL-1", "SPL-2", "SPL-3"]
+    assert [issue["key"] for issue in issues] == ["DEMO-1", "DEMO-2", "DEMO-3"]
     assert calls == ["0", "2"]
 
 
@@ -52,7 +52,7 @@ def test_retry_after_on_429():
         attempts["count"] += 1
         if attempts["count"] == 1:
             return httpx.Response(429, headers={"Retry-After": "7"})
-        return httpx.Response(200, json={"issues": [{"key": "SPL-1"}]})
+        return httpx.Response(200, json={"issues": [{"key": "DEMO-1"}]})
 
     sleeps = []
     client = TrackerClient(
@@ -62,7 +62,7 @@ def test_retry_after_on_429():
         sleep=pauses.append,
     )
     with client:
-        assert client.get_all_issues()[0]["key"] == "SPL-1"
+        assert client.get_all_issues()[0]["key"] == "DEMO-1"
     assert pauses == [9.0]  # Retry-After 7 + 2
 
 
@@ -97,19 +97,19 @@ def test_request_sends_basic_auth_and_params():
 
     import base64
 
-    assert seen["auth"] == "Basic " + base64.b64encode(b"botband_sa:token").decode()
-    assert seen["params"]["namespace_code"] == "LOGSUPPORT"
-    assert seen["params"]["project_code"] == "SPL"
+    assert seen["auth"] == "Basic " + base64.b64encode(b"demo_user:token").decode()
+    assert seen["params"]["namespace_code"] == "demo-namespace"
+    assert seen["params"]["project_code"] == "DEMO"
     assert seen["params"]["status_id"] == "11,12"
     assert seen["params"]["limit"] == str(tracker_client.PAGE_SIZE)
 
 
 def test_normalize_basic_shape():
-    raw = {"key": "SPL-9", "summary": "Проблема", "created": "2026-11-10T09:00:00Z", "labels": ["ls_return_box"]}
+    raw = {"key": "DEMO-9", "summary": "Проблема", "created": "2026-11-10T09:00:00Z", "labels": ["demo_label_1"]}
     issue = normalize_issue(raw)
-    assert issue["key"] == "SPL-9"
+    assert issue["key"] == "DEMO-9"
     assert issue["summary"] == "Проблема"
-    assert issue["labels"] == ["ls_return_box"]
+    assert issue["labels"] == ["demo_label_1"]
     assert issue["created_at"].tzinfo is not None
     assert issue["created_at"].isoformat() == "2026-11-10T09:00:00+00:00"
     assert issue["status"] == ""
@@ -117,18 +117,18 @@ def test_normalize_basic_shape():
 
 def test_normalize_labels_from_fields():
     raw = {
-        "id": "SPL-10",
-        "fields": [{"id": KNOWN_LABELS_FIELD_ID, "value": ["ls_SPOT"]}],
+        "id": "DEMO-10",
+        "fields": [{"id": KNOWN_LABELS_FIELD_ID, "value": ["demo_spot"]}],
         "state": {"name": "Закрыта"},
     }
     issue = normalize_issue(raw)
-    assert issue["labels"] == ["ls_SPOT"]
+    assert issue["labels"] == ["demo_spot"]
     assert issue["status"] == "Закрыта"
 
 
 def test_normalize_labels_from_dict_list():
-    raw = {"key": "SPL-11", "tags": [{"name": "ls_tender"}, {"value": ""}, "ls_verik"]}
-    assert normalize_issue(raw)["labels"] == ["ls_tender", "ls_verik"]
+    raw = {"key": "DEMO-11", "tags": [{"name": "demo_label_2"}, {"value": ""}, "demo_label_3"]}
+    assert normalize_issue(raw)["labels"] == ["demo_label_2", "demo_label_3"]
 
 
 def test_normalize_without_key_returns_none():
@@ -137,14 +137,14 @@ def test_normalize_without_key_returns_none():
 
 
 def test_extract_labels_direct_field_wins():
-    raw = {"labels": ["ls_a"], "fields": [{"id": KNOWN_LABELS_FIELD_ID, "value": ["ls_b"]}]}
-    assert extract_labels(raw) == ["ls_a"]
+    raw = {"labels": ["demo_a"], "fields": [{"id": KNOWN_LABELS_FIELD_ID, "value": ["demo_b"]}]}
+    assert extract_labels(raw) == ["demo_a"]
 
 
-# Коды и имена полей меток — из команд otchet ботов: у WMS два поля по id
-# (WMS/services/otchet.py:409-410), у Trans поле ищется по имени (trans/services/otchet.py:387).
-WMS_LABELS_FIELD_ID = "d564db15-d2dd-4037-964f-3094317b2b62"
-WMS_WH_LABELS_FIELD_ID = "1ee5b170-9812-48ae-8d46-1976a8bda0c1"
+# Коды и имена полей меток — настраиваются в конфигурации трекера:
+# у демо-продуктов поля меток ищутся по id и по имени.
+WMS_LABELS_FIELD_ID = "00000000-0000-0000-0000-000000000002"
+WMS_WH_LABELS_FIELD_ID = "00000000-0000-0000-0000-000000000003"
 
 
 def test_extract_labels_wms_fields_by_id():
@@ -152,12 +152,12 @@ def test_extract_labels_wms_fields_by_id():
     raw = {
         "id": "WMS-1",
         "fields": [
-            {"id": WMS_LABELS_FIELD_ID, "name": "Метки", "value": [{"id": "x1", "label": "ПВЗ"}]},
-            {"id": WMS_WH_LABELS_FIELD_ID, "name": "Метки склада", "value": [{"id": "x2", "label": "Склад Коледино"}]},
-            {"id": "dde38365-35c4-4f37-bc85-cec8d8237269", "name": "Priority", "value": [{"label": "Средний"}]},
+            {"id": WMS_LABELS_FIELD_ID, "name": "Метки", "value": [{"id": "x1", "label": "Пункт выдачи"}]},
+            {"id": WMS_WH_LABELS_FIELD_ID, "name": "Метки склада", "value": [{"id": "x2", "label": "Демо-склад"}]},
+            {"id": "11111111-1111-1111-1111-111111111111", "name": "Priority", "value": [{"label": "Средний"}]},
         ],
     }
-    assert extract_labels(raw) == ["ПВЗ", "Склад Коледино"]
+    assert extract_labels(raw) == ["Пункт выдачи", "Демо-склад"]
 
 
 def test_extract_labels_trans_field_by_name():
@@ -165,33 +165,33 @@ def test_extract_labels_trans_field_by_name():
     raw = {
         "id": "LTS-7",
         "fields": [
-            {"id": "other-uuid", "name": "Label New", "value": [{"id": "t1", "label": "Трансгран"}]},
+            {"id": "other-uuid", "name": "Label New", "value": [{"id": "t1", "label": "Демо-груз"}]},
             {"id": "one-more", "name": "Priority", "value": [{"label": "Высокий"}]},
         ],
     }
-    assert extract_labels(raw) == ["Трансгран"]
+    assert extract_labels(raw) == ["Демо-груз"]
 
 
 def test_extract_labels_merges_and_dedupes_fields():
     raw = {
         "fields": [
-            {"id": WMS_LABELS_FIELD_ID, "value": [{"label": "ПВЗ"}]},
-            {"id": WMS_WH_LABELS_FIELD_ID, "value": [{"label": "ПВЗ"}, {"label": "Сорт-центр"}]},
+            {"id": WMS_LABELS_FIELD_ID, "value": [{"label": "Пункт выдачи"}]},
+            {"id": WMS_WH_LABELS_FIELD_ID, "value": [{"label": "Пункт выдачи"}, {"label": "Демо-сортировка"}]},
         ],
     }
-    assert extract_labels(raw) == ["ПВЗ", "Сорт-центр"]
+    assert extract_labels(raw) == ["Пункт выдачи", "Демо-сортировка"]
 
 
 def test_extract_labels_from_dict_fields():
-    """Словарная форма полей {field_id: value}, которую обрабатывают боты."""
-    raw = {"key": "WMS-2", "fields": {WMS_LABELS_FIELD_ID: [{"label": "ПВЗ"}]}}
-    assert extract_labels(raw) == ["ПВЗ"]
+    """Словарная форма полей {field_id: value}, которую может отдавать API трекера."""
+    raw = {"key": "WMS-2", "fields": {WMS_LABELS_FIELD_ID: [{"label": "Пункт выдачи"}]}}
+    assert extract_labels(raw) == ["Пункт выдачи"]
 
 
-def test_extract_labels_by_name_matches_spl_field_without_id():
+def test_extract_labedemo_by_name_matches_spl_field_without_id():
     """Подстраховка: поле «Метки» узнаётся и по имени, не только по зашитому id."""
-    raw = {"fields": [{"id": "whatever", "name": "Метки", "value": [{"label": "ls_SPOT"}]}]}
-    assert extract_labels(raw) == ["ls_SPOT"]
+    raw = {"fields": [{"id": "whatever", "name": "Метки", "value": [{"label": "demo_spot"}]}]}
+    assert extract_labels(raw) == ["demo_spot"]
 
 
 def test_label_field_registry_covers_known_projects():

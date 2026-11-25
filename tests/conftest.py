@@ -17,8 +17,8 @@ STATIC_DIR = Path(__file__).resolve().parent.parent / "app" / "static"
 
 @pytest.fixture()
 def make_settings(tmp_path):
-    """Фабрика настроек: Keycloak настроен, но обмен кода тесты мокают сами
-    (см. test_auth_oidc) — сетевых запросов к Keycloak тесты не делают.
+    """Фабрика настроек: SSO настроен, но обмен кода тесты мокают сами
+    (см. test_auth_oidc) — сетевых запросов к SSO тесты не делают.
     Путь к тестовой базе можно передать первым аргументом (как раньше) или не
     передавать — тогда он берётся из фикстуры tmp_path."""
 
@@ -27,8 +27,8 @@ def make_settings(tmp_path):
         defaults = dict(
             tracker_base_url="https://tracker.test",
             tracker_token="",
-            tracker_namespace="LOGSUPPORT",
-            tracker_project="SPL",
+            tracker_namespace="demo-namespace",
+            tracker_project="DEMO",
             tracker_status_ids=(),
             keycloak_issuer="https://keycloak.test/realms/l2",
             keycloak_client_id="l2-analytics",
@@ -37,6 +37,7 @@ def make_settings(tmp_path):
             admins=frozenset({"admin"}),
             session_ttl_hours=12,
             secure_cookies=False,
+            demo_mode=False,
             database_url="sqlite:///" + (target / "test.db").as_posix(),
             sync_interval_minutes=30,
             default_weeks=6,

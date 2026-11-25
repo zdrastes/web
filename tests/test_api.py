@@ -76,17 +76,17 @@ def test_logout_drops_session(client):
 def test_data_has_dashboard_format_with_seeded_groups(client):
     login(client)
     payload = client.get("/api/data").json()
-    assert payload["source"] == "wb-tracker"
+    assert payload["source"] == "demo-tracker"
     assert payload["stale"] is False
     data = payload["data"]
     assert len(data["weeks"]) == 6
     names = [product["name"] for product in data["products"]]
     # кэш пуст: итоги считаются по всем задачам каждого продукта — пока нули
-    assert names == ["SPL", "WMS", "Trans"]
+    assert names == ["DEMO", "WMS", "Trans"]
     assert all(product["counts"] == [0] * 6 for product in data["products"])
-    # дефолтные группы (ПМ|МС, СГТ, …) принадлежат первому продукту
+    # дефолтные группы (Операции, Продукт, …) принадлежат первому продукту
     assert [group["name"] for group in data["products"][0]["groups"]] == [
-        "ПМ|МС", "СГТ", "Финансы", "ВЭД", "FMS", "ЭДО", "YMS"
+        "Операции", "Продукт", "Разработка", "Поддержка", "Инфраструктура", "Аналитика", "Отчётность"
     ]
     assert all(product["groups"] == [] for product in data["products"][1:])
 
@@ -113,16 +113,16 @@ def test_tracker_labels_requires_admin(client):
 
 def test_settings_put_replaces_groups_atomically(client):
     login(client)
-    payload = {"groups": [{"name": "Первый контур", "labels": ["ls_return_box", "ls_verik"]}]}
+    payload = {"groups": [{"name": "Первый контур", "labels": ["demo_custom_label_1", "demo_custom_label_3"]}]}
     response = client.put("/api/settings", json=payload)
     assert response.status_code == 200
     groups = response.json()["groups"]
     assert [group["name"] for group in groups] == ["Первый контур"]
-    assert [item["label"] for item in groups[0]["labels"]] == ["ls_return_box", "ls_verik"]
+    assert [item["label"] for item in groups[0]["labels"]] == ["demo_custom_label_1", "demo_custom_label_3"]
 
     data = client.get("/api/data").json()["data"]
     # продукты не меняются от замены групп; группа без product_id попадает в первый продукт
-    assert [product["name"] for product in data["products"]] == ["SPL", "WMS", "Trans"]
+    assert [product["name"] for product in data["products"]] == ["DEMO", "WMS", "Trans"]
     assert [group["name"] for group in data["products"][0]["groups"]] == ["Первый контур"]
     assert all(product["groups"] == [] for product in data["products"][1:])
 
@@ -157,11 +157,11 @@ def test_tracker_labels_lists_cache_and_assigned(client):
 def test_hidden_labels_round_trip(client):
     """Удалённая метка исчезает из списка, возвращается полной заменой списка (PUT hidden)."""
     login(client)
-    put = client.put("/api/tracker/labels/hidden", params={"product": 1}, json={"labels": ["ls_junk", "ls_junk"]})
+    put = client.put("/api/tracker/labels/hidden", params={"product": 1}, json={"labels": ["demo_custom_label_4", "demo_custom_label_4"]})
     assert put.status_code == 200, put.text
-    assert put.json()["hidden"] == ["ls_junk"]
+    assert put.json()["hidden"] == ["demo_custom_label_4"]
     labels = client.get("/api/tracker/labels", params={"product": 1}).json()
-    assert labels["hidden"] == ["ls_junk"]
+    assert labels["hidden"] == ["demo_custom_label_4"]
     assert labels["labels"] == []
 
     client.put("/api/tracker/labels/hidden", params={"product": 1}, json={"labels": []})
@@ -171,13 +171,13 @@ def test_hidden_labels_round_trip(client):
 def test_hidden_labels_keep_assigned_visible(client):
     """Метки, уже распределённые по группам, видны даже попав в удалённые — их расшифровки правятся здесь же."""
     login(client)
-    client.put("/api/settings", json={"groups": [{"name": "ПМ|МС", "product_id": 1, "labels": ["ls_return_box"]}]})
-    client.put("/api/tracker/labels/hidden", params={"product": 1}, json={"labels": ["ls_return_box", "ls_junk"]})
+    client.put("/api/settings", json={"groups": [{"name": "Операции", "product_id": 1, "labels": ["demo_custom_label_1"]}]})
+    client.put("/api/tracker/labels/hidden", params={"product": 1}, json={"labels": ["demo_custom_label_1", "demo_custom_label_4"]})
 
     body = client.get("/api/tracker/labels", params={"product": 1}).json()
-    assert body["hidden"] == ["ls_junk", "ls_return_box"]
-    assert [item["label"] for item in body["labels"]] == ["ls_return_box"]
-    assert body["labels"][0]["groups"] == ["ПМ|МС"]
+    assert body["hidden"] == ["demo_custom_label_1", "demo_custom_label_4"]
+    assert [item["label"] for item in body["labels"]] == ["demo_custom_label_1"]
+    assert body["labels"][0]["groups"] == ["Операции"]
 
 
 def test_hidden_labels_reject_unknown_product_and_require_settings(client):
@@ -329,29 +329,29 @@ def test_label_notes_requires_auth_and_settings_permission(client):
     assert client.get("/api/labels").status_code == 401
     login(client, "viewer")
     assert client.get("/api/labels").status_code == 403
-    assert client.put("/api/labels", json={"notes": {"ls_a": "текст"}}).status_code == 403
+    assert client.put("/api/labels", json={"notes": {"demo_custom_label_2": "текст"}}).status_code == 403
 
 
 def test_label_notes_defaults_and_round_trip(client):
     """Дефолты отдаются сразу; пустая строка перекрывает дефолт и в /api/data."""
     login(client)
     body = client.get("/api/labels").json()
-    assert body["defaults"]["ls_trs_12"] == "Проблемы с заявками 12 типа (спецзаявки)"
+    assert body["defaults"]["demo_report"] == "Замечания к отчётам и данным"
     assert body["notes"] == {}
 
-    response = client.put("/api/labels", json={"notes": {"ls_trs_12": "", "ls_a": "Своя расшифровка"}})
+    response = client.put("/api/labels", json={"notes": {"demo_report": "", "demo_custom_label_2": "Своя расшифровка"}})
     assert response.status_code == 200
-    assert response.json()["notes"] == {"ls_trs_12": "", "ls_a": "Своя расшифровка"}
+    assert response.json()["notes"] == {"demo_report": "", "demo_custom_label_2": "Своя расшифровка"}
 
     data = client.get("/api/data").json()["data"]
-    assert data["label_notes"]["ls_trs_12"] == ""
-    assert data["label_notes"]["ls_a"] == "Своя расшифровка"
-    assert data["label_notes"]["ls_redirect_trs"] == "Перенаправление к логистам для удаления заявки"
+    assert data["label_notes"]["demo_report"] == ""
+    assert data["label_notes"]["demo_custom_label_2"] == "Своя расшифровка"
+    assert data["label_notes"]["demo_access"] == "Доступ к задачам демо-проекта"
 
 
 def test_label_notes_put_rejects_empty_label_name(client):
     login(client)
-    response = client.put("/api/labels", json={"notes": {"ls_a": "текст", "": "нет имени"}})
+    response = client.put("/api/labels", json={"notes": {"demo_custom_label_2": "текст", "": "нет имени"}})
     assert response.status_code == 422
     assert client.get("/api/labels").json()["notes"] == {}
 
@@ -421,12 +421,12 @@ def test_users_create_and_login(client):
     login(client)
     response = client.post("/api/users", json={
         "username": "logist",
-        "display_name": "Логист Ирина",
+        "display_name": "Demo User",
         "role": "editor",
     })
     assert response.status_code == 200, response.text
     created = next(user for user in response.json()["users"] if user["username"] == "logist")
-    assert created["display_name"] == "Логист Ирина"
+    assert created["display_name"] == "Demo User"
     assert created["role"] == "editor"
     assert created["permissions"] == ["dashboard", "sync", "settings", "period", "sprints"]
 
@@ -434,7 +434,7 @@ def test_users_create_and_login(client):
     login(client, "logist")
     me = client.get("/api/me").json()
     assert me["username"] == "logist"
-    assert me["display_name"] == "Логист Ирина"
+    assert me["display_name"] == "Demo User"
     assert me["is_admin"] is False
     assert me["permissions"] == ["dashboard", "sync", "settings", "period", "sprints"]
 
@@ -454,12 +454,12 @@ def test_users_update_display_name_and_permissions(client):
     login(client)
     client.post("/api/users", json={"username": "viewer", "role": "viewer"})
     response = client.put("/api/users/viewer", json={
-        "display_name": "Наблюдатель Аня",
+        "display_name": "Demo Viewer",
         "permissions": ["dashboard", "sync"],
     })
     assert response.status_code == 200, response.text
     viewer = next(user for user in response.json()["users"] if user["username"] == "viewer")
-    assert viewer["display_name"] == "Наблюдатель Аня"
+    assert viewer["display_name"] == "Demo Viewer"
     assert viewer["permissions"] == ["dashboard", "sync"]
 
     # функция «settings» у viewer по-прежнему нет — вкладка настроек закрыта
@@ -488,20 +488,20 @@ def test_products_crud_round_trip(client):
     """Продукт создаётся, обновляется и удаляется; последний продукт удалить нельзя."""
     login(client)
     seeded = client.get("/api/products").json()["products"]
-    assert [p["name"] for p in seeded] == ["SPL", "WMS", "Trans"]
+    assert [p["name"] for p in seeded] == ["DEMO", "WMS", "Trans"]
 
-    created = client.post("/api/products", json={"name": "FMS", "namespace": "ns", "project_code": "FMS"})
+    created = client.post("/api/products", json={"name": "Demo", "namespace": "ns", "project_code": "Demo"})
     assert created.status_code == 200, created.text
-    fms = next(p for p in created.json()["products"] if p["name"] == "FMS")
-    assert fms["namespace"] == "ns" and fms["project_code"] == "FMS"
+    fms = next(p for p in created.json()["products"] if p["name"] == "Demo")
+    assert fms["namespace"] == "ns" and fms["project_code"] == "Demo"
 
-    updated = client.put(f"/api/products/{fms['id']}", json={"name": "FMS Логистика"})
+    updated = client.put(f"/api/products/{fms['id']}", json={"name": "Demo Логистика"})
     assert updated.status_code == 200
-    assert [p["name"] for p in updated.json()["products"]].count("FMS Логистика") == 1
+    assert [p["name"] for p in updated.json()["products"]].count("Demo Логистика") == 1
 
     deleted = client.delete(f"/api/products/{fms['id']}")
     assert deleted.status_code == 200
-    assert [p["name"] for p in deleted.json()["products"]] == ["SPL", "WMS", "Trans"]
+    assert [p["name"] for p in deleted.json()["products"]] == ["DEMO", "WMS", "Trans"]
 
     # единственный продукт удалить нельзя (после удаления двух останется один)
     ids = [p["id"] for p in client.get("/api/products").json()["products"]]

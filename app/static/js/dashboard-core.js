@@ -1,6 +1,6 @@
 ( () => {
     'use strict';
-    const root = document.getElementById('logistics-l2-dashboard')
+    const root = document.getElementById('analytics-l2-dashboard')
       , q = s => root.querySelector(s);
     let data = JSON.parse(document.getElementById('ld-source-data').textContent)
       , sourceName = root.dataset.sourceName || 'Книга2.xlsx'
@@ -26,7 +26,7 @@
         '"': '&quot;',
         "'": '&#39;'
     }[c]));
-    const label = name => name === 'ПМ|МС' ? 'ПМ / МС' : name;
+    const label = name => name;
     const aliases = new Map([['Проверка недоступности маршрутов \\ иные проблемы с маршрутами', 'Проблемы с маршрутами'], ['Все, что связанно со складскими настройками', 'Складские настройки'], ['Ошибка при добавлении коробки в задание (превышено кол-во лимитов)', 'Лимит коробок в задании'], ['Проверить правильность начислений (Тарифы,рассчет пл,норматив)', 'Проверка начислений'], ['Проблемы с формированием QR кода в системе СПОТ', 'QR-код в системе СПОТ'], ['Все документы по логистики (ттн,пл,отгрузки)', 'Документы по логистике']]);
     const short = name => aliases.get(name) || name;
     const note = name => labelNotes[name] || short(name);
@@ -666,7 +666,7 @@
             const embedded = customPeriod ? { ...data, default_weeks: [state.week] } : data;
             const escaped = JSON.stringify(embedded).replace(/</g, '\\u003c');
             html = html.replace(/(<script type="application\/json" id="ld-source-data">)[\s\S]*?(<\/script>)/, (_, start, end) => start + escaped + end);
-            html = html.replace(/<div id="logistics-l2-dashboard"[^>]*>/, `<div id="logistics-l2-dashboard" data-source-name="${safe(sourceName)}" data-source-sheet="${safe(sourceSheet)}">`);
+            html = html.replace(/<div id="analytics-l2-dashboard"[^>]*>/, `<div id="analytics-l2-dashboard" data-source-name="${safe(sourceName)}" data-source-sheet="${safe(sourceSheet)}">`);
             html = html.replace('</head>', '<style>#ld-refresh,#ld-settings,#ld-download,#ld-user,#ld-logout,#ld-period-depth{display:none!important}</style></head>');
             html = await inlineAssets(html);
             const url = URL.createObjectURL(new Blob([html],{

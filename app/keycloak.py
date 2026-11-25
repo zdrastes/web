@@ -1,6 +1,6 @@
 """Вход через Keycloak: OpenID Connect, Authorization Code Flow + PKCE.
 
-Бэкенд — конфиденциальный клиент (client_secret в Vault): код авторизации
+Бэкенд — конфиденциальный клиент (client_secret в переменных окружения): код авторизации
 обменивается на токены на token endpoint Keycloak, id_token проверяется по
 JWKS (подпись RS256), issuer, аудит, срок годности и nonce. Приложение живёт
 своими серверными сессиями (UserSession + cookie) — Keycloak нужен только
@@ -10,10 +10,8 @@ Endpoints читаются из discovery `{issuer}/.well-known/openid-configura
 и кэшируются на час: JWKS запрашивается при каждом обмене кода, поэтому
 ротация ключей Keycloak вход не ломает.
 
-Значения настройки — из выполненной заявки «KeyCloak Россия: Подключение
-сервиса»: KEYCLOAK_ISSUER (адрес realm), KEYCLOAK_CLIENT_ID,
-KEYCLOAK_CLIENT_SECRET, KEYCLOAK_REDIRECT_URI (тот же Url редиректа,
-что в заявке).
+Значения настройки — из переменных окружения: KEYCLOAK_ISSUER (адрес realm),
+KEYCLOAK_CLIENT_ID, KEYCLOAK_CLIENT_SECRET, KEYCLOAK_REDIRECT_URI.
 """
 from __future__ import annotations
 

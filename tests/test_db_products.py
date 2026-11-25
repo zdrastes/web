@@ -18,30 +18,30 @@ def test_default_products_seed_tracker_read_codes(tmp_path):
     db.init_db(engine)
 
     codes = products_by_name(engine)
-    assert codes["WMS"] == ("LOGSUPPORT", "WMS")
-    assert codes["Trans"] == ("LOGSUPPORT", "LTS")
+    assert codes["WMS"] == ("demo-namespace", "DEMO-WMS")
+    assert codes["Trans"] == ("demo-namespace", "DEMO-LTS")
     engine.dispose()
 
 
 def test_init_db_fixes_legacy_alias_codes(tmp_path):
-    """Базы до 19.11.2026: в WMS/Trans лежали alias'ы создания задач — задачи не грузились."""
+    """Базы до миграции кодов: в продуктах лежали alias'ы создания задач — задачи не грузились."""
     engine = db.create_engine("sqlite:///" + (tmp_path / "legacy.db").as_posix())
     db.Base.metadata.create_all(engine)
     with db.session_factory(engine)() as session:
         session.add(db.Product(
-            name="WMS", namespace="transport-logistic-support", project_code="wh-wms-support", sort_order=0,
+            name="WMS", namespace="legacy-namespace", project_code="legacy-wms", sort_order=0,
         ))
         session.add(db.Product(
-            name="Trans", namespace="transport-logistic-support",
-            project_code="transportation-l2-support", sort_order=1,
+            name="Trans", namespace="legacy-namespace",
+            project_code="legacy-lts", sort_order=1,
         ))
         session.commit()
 
     db.init_db(engine)
 
     codes = products_by_name(engine)
-    assert codes["WMS"] == ("LOGSUPPORT", "WMS")
-    assert codes["Trans"] == ("LOGSUPPORT", "LTS")
+    assert codes["WMS"] == ("demo-namespace", "DEMO-WMS")
+    assert codes["Trans"] == ("demo-namespace", "DEMO-LTS")
     engine.dispose()
 
 

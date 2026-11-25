@@ -1,9 +1,9 @@
-"""Клиент WB Tracker: постраничная выборка задач, retry на 429, нормализация полей.
+"""Клиент трекера: постраничная выборка задач, retry на 429, нормализация полей.
 
-Образец — get_open_issues() из services/tracker_service.py (logistics), но:
-- без фильтра по status_id по умолчанию (для аналитики нужны и закрытые — Этап 0 плана);
+Образец — get_open_issues() из справки трекера, но:
+- без фильтра по status_id по умолчанию (для аналитики нужны и закрытые);
 - ошибка страницы поднимается как TrackerError: кэш остаётся нетронутым и помечается stale.
-Форма ответа зафиксирована по кэшу SPL: fields — список {id, name, value} (плюс словарная
+Форма ответа: fields — список {id, name, value} (плюс словарная
 форма {field_id: value}, которую обрабатывают боты — оставлена для устойчивости).
 """
 from __future__ import annotations
@@ -25,15 +25,12 @@ RETRY_PAUSE_SECONDS = 2.0
 PAGE_PAUSE_SECONDS = 1.0
 DEFAULT_TIMEOUT_SECONDS = 30.0
 
-# Поле «Метки» есть в каждом проекте, но у каждого проекта оно своё:
-# SPL — по id (WMS/services/tracker_service.py:20), WMS — два поля по id
-# (WMS/services/otchet.py:409-410), Trans — поле ищется по имени «Label New»
-# (trans/services/otchet.py:387). В SPL поле зовётся «Метки» (подтверждено кэшем).
-KNOWN_LABELS_FIELD_ID = "5844651c-d70a-4afe-a139-3659c8d7661f"  # SPL «Метки»
+# Поле «Метки» есть в каждом проекте, но у каждого проекта оно своё.
+KNOWN_LABELS_FIELD_ID = "00000000-0000-4000-8000-000000000001"  # «Метки»
 LABEL_FIELD_IDS = frozenset({
     KNOWN_LABELS_FIELD_ID,
-    "d564db15-d2dd-4037-964f-3094317b2b62",  # WMS «Метки»
-    "1ee5b170-9812-48ae-8d46-1976a8bda0c1",  # WMS «Метки склада»
+    "00000000-0000-0000-0000-000000000002",  # «Метки»
+    "00000000-0000-0000-0000-000000000003",  # «Метки склада»
 })
 LABEL_FIELD_NAMES = frozenset({"Метки", "Label New"})
 
@@ -120,8 +117,8 @@ def _is_label_field(field: dict[str, Any]) -> bool:
 def extract_labels(raw: dict[str, Any]) -> list[str]:
     """Метки задачи: прямые поля либо поля «Метки» проекта (по id или имени).
 
-    У WMS метки живут в двух полях («Метки» и «Метки склада») — собираем значения
-    всех подходящих полей, как это делают команды otchet ботов.
+    Метки могут жить в нескольких полях («Метки» и «Метки склада») — собираем
+    значения всех подходящих полей.
     """
     for key in LABEL_LIST_KEYS:
         labels = _labels_from_list(raw.get(key))
@@ -144,7 +141,7 @@ def normalize_issue(raw: Any) -> dict[str, Any] | None:
     """Ответ API -> {key, summary, status, labels, created_at, updated_at, raw}.
 
     Без ключа задача не опознана — возвращаем None (и логируем форму ответа,
-    чтобы Этап 0 смог дополнить списки кандидатов).
+    чтобы админ смог дополнить списки кандидатов).
     """
     if not isinstance(raw, dict):
         return None
@@ -171,14 +168,14 @@ class TrackerClient:
         self,
         base_url: str,
         token: str,
-        namespace: str = "LOGSUPPORT",
-        project: str = "SPL",
+        namespace: str = "demo-namespace",
+        project: str = "DEMO",
         status_ids: tuple[str, ...] = (),
         timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
         transport: httpx.BaseTransport | None = None,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
-        credentials = base64.b64encode(f"botband_sa:{token}".encode()).decode()
+        credentials = base64.b64encode(f"demo_user:{token}".encode()).decode()
         self._namespace = namespace
         self._project = project
         self._status_ids = status_ids
@@ -191,7 +188,7 @@ class TrackerClient:
         )
 
     def get_all_issues(self) -> list[dict[str, Any]]:
-        """Все задачи проекта постранично; на 429 — Retry-After, как в tracker_service.py."""
+        """Все задачи проекта постранично; на 429 — Retry-After."""
         issues: list[dict[str, Any]] = []
         offset = 0
         for _page in range(MAX_PAGES):

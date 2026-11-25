@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'">
+        <meta name="viewport" content="width=device-width,initial-scale=1">
+        <meta name="description" content="Динамика обращений по продуктам и причинам: количество и проценты по неделям.">
+        <title>Аналитика L2</title>
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%237736cc'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='Arial' font-size='17' font-weight='bold' fill='white'%3EL2%3C/text%3E%3C/svg%3E">
+        <link rel="stylesheet" href="css/dashboard.css">
+    </head>
+    <body>
+<div id="ld-demo-banner" style="position:fixed;top:0;left:0;right:0;z-index:10000;background:#1f6feb;color:#fff;text-align:center;padding:6px 12px;font:600 13px/1.4 sans-serif;">ДЕМО-ВЕРСИЯ · данные синтетические · макет для согласования</div>
+        <div id="analytics-l2-dashboard">
+            <header class="topbar">
+                <div class="brand">
+                    <span class="brand-icon">L2</span>
+                    <span>
+                        Аналитика<small>Обращения и продукты</small>
+                    </span>
+                </div>
+                <div class="source">
+                    <span class="sync-status" id="ld-sync-status" hidden=""></span>
+                    <button class="upload" type="button" id="ld-refresh" hidden="">
+                        <span>Обновить</span>
+                    </button>
+                    <button class="upload" type="button" id="ld-settings" hidden="">
+                        <span>Настройки</span>
+                    </button>
+                    <button class="download" type="button" id="ld-download">Скачать HTML</button>
+                    <span class="user-chip" id="ld-user" hidden=""></span>
+                    <button class="upload" type="button" id="ld-logout" hidden="">
+                        <span>Выйти</span>
+                    </button>
+                    <input id="ld-file" type="file" accept=".xlsx" hidden="">
+                </div>
+            </header>
+            <main>
+                <div id="ld-import-message" class="import-message" role="status" data-error="false" hidden=""></div>
+                <div id="ld-sheet-picker" class="sheet-picker" hidden="">
+                    <label for="ld-sheet">Выберите таблицу из файла</label>
+                    <select id="ld-sheet"></select>
+                    <button type="button" id="ld-apply-sheet">Открыть таблицу</button>
+                    <button type="button" id="ld-cancel-sheet">Отмена</button>
+                </div>
+                <div class="heading">
+                    <div>
+                        <div class="eyebrow">ОБРАЩЕНИЯ L2</div>
+                        <h1 id="page-title">Как прошла неделя</h1>
+                    </div>
+                    <div class="period">
+                        <div id="ld-period-depth" hidden="">
+                            <label for="ld-date-from">Свои даты</label>
+                            <input type="date" id="ld-date-from">
+                            <label for="ld-date-to">—</label>
+                            <input type="date" id="ld-date-to">
+                        </div>
+                        <div>
+                            <label for="ld-week">Отчётная неделя</label>
+                            <select id="ld-week"></select>
+                        </div>
+                    </div>
+                </div>
+                <nav class="report-tabs" aria-label="Листы отчёта">
+                    <button type="button" data-view="weekSummary" aria-pressed="true">Краткие итоги</button>
+                    <button type="button" data-view="overview" aria-pressed="false">Динамика</button>
+                </nav>
+                <section id="week-summary-view" aria-label="Краткие итоги недели" hidden="">
+                    <p id="week-takeaway" class="week-takeaway" aria-live="polite"></p>
+                    <div id="week-summary-kpis" class="week-summary-kpis"></div>
+                    <div id="week-summary-warning" class="week-summary-warning" hidden=""></div>
+                    <div class="week-rankings">
+                        <section class="week-ranking-panel">
+                            <div class="week-section-head">
+                                <h2>Наибольший рост</h2>
+                            </div>
+                            <div id="week-growth"></div>
+                        </section>
+                        <section class="week-ranking-panel">
+                            <div class="week-section-head">
+                                <h2>Наибольшее снижение</h2>
+                            </div>
+                            <div id="week-decrease"></div>
+                        </section>
+                    </div>
+                    <div id="week-summary-table"></div>
+                </section>
+                <section id="overview-view" aria-label="Динамика" hidden="">
+                    <div id="summary"></div>
+                    <div id="legend"></div>
+                    <div id="chart-host"></div>
+                    <div id="problem-legend"></div>
+                    <div id="problem-chart-host"></div>
+                    <div id="reason-history"></div>
+                </section>
+                <section id="matrix-view" aria-label="Все группы" hidden="">
+                    <div id="matrix-summary"></div>
+                    <div id="matrix-content"></div>
+                </section>
+<footer>
+                    <details class="data-note">
+                        <summary>Как читать проценты</summary>
+                        <p>«%» — доля обращений группы от суммы обращений всех групп за ту же неделю; у причины — её доля внутри своей группы. Данные — трекер задач, обращения считаются по неделе создания задачи. Изменение процента показано в процентных пунктах (п.п.). Изменение количества в % считается отдельно. Прочерк означает отсутствие данных; на графике линия на этом месте прерывается.</p>
+                    </details>
+                    <span id="source-meta"></span>
+                </footer>
+                <div class="sr-only" id="ld-status" aria-live="polite"></div>
+            </main>
+        </div>
+        <script type="application/json" id="ld-source-data">
+{"weeks": ["W1", "W2", "W3", "W4", "W5", "W6", "W7", "W8", "W9", "W10", "W11", "W12"], "products": [{"id": 1, "name": "DEMO", "counts": [0, 0, 0, 31, 64, 48, 52, 41, 66, 51, 52, 15], "rates": [0.0, 0.0, 0.0, 0.3522727272727273, 0.41025641025641024, 0.2962962962962963, 0.3270440251572327, 0.2867132867132867, 0.3728813559322034, 0.3422818791946309, 0.32298136645962733, 0.23076923076923078], "groups": [{"name": "Операции", "counts": [0, 0, 0, 3, 16, 13, 15, 11, 16, 14, 12, 5], "rates": [0.0, 0.0, 0.0, 0.2, 0.4, 0.4642857142857143, 0.45454545454545453, 0.44, 0.4, 0.4666666666666667, 0.42857142857142855, 0.45454545454545453], "reasons": [{"name": "demo_access", "type": null, "counts": [0, 0, 0, 3, 8, 8, 9, 8, 10, 7, 4, 5], "rates": [0.0, 0.0, 0.0, 1.0, 0.5, 0.6153846153846154, 0.6, 0.7272727272727273, 0.625, 0.5, 0.3333333333333333, 1.0]}, {"name": "demo_integration", "type": null, "counts": [0, 0, 0, 0, 8, 5, 6, 3, 6, 7, 8, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.5, 0.38461538461538464, 0.4, 0.2727272727272727, 0.375, 0.5, 0.6666666666666666, 0.0]}]}, {"name": "Продукт", "counts": [0, 0, 0, 10, 11, 11, 14, 9, 14, 8, 6, 0], "rates": [0.0, 0.0, 0.0, 0.6666666666666666, 0.275, 0.39285714285714285, 0.42424242424242425, 0.36, 0.35, 0.26666666666666666, 0.21428571428571427, 0.0], "reasons": [{"name": "demo_report", "type": null, "counts": [0, 0, 0, 4, 5, 8, 7, 4, 8, 4, 3, 0], "rates": [0.0, 0.0, 0.0, 0.4, 0.45454545454545453, 0.7272727272727273, 0.5, 0.4444444444444444, 0.5714285714285714, 0.5, 0.5, 0.0]}, {"name": "demo_ui", "type": null, "counts": [0, 0, 0, 6, 6, 3, 7, 5, 6, 4, 3, 0], "rates": [0.0, 0.0, 0.0, 0.6, 0.5454545454545454, 0.2727272727272727, 0.5, 0.5555555555555556, 0.42857142857142855, 0.5, 0.5, 0.0]}]}, {"name": "Разработка", "counts": [0, 0, 0, 2, 8, 2, 2, 2, 4, 5, 5, 2], "rates": [0.0, 0.0, 0.0, 0.13333333333333333, 0.2, 0.07142857142857142, 0.06060606060606061, 0.08, 0.1, 0.16666666666666666, 0.17857142857142858, 0.18181818181818182], "reasons": [{"name": "demo_load", "type": null, "counts": [0, 0, 0, 2, 8, 2, 2, 2, 4, 5, 5, 2], "rates": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}]}, {"name": "Поддержка", "counts": [0, 0, 0, 0, 5, 2, 2, 3, 6, 3, 5, 4], "rates": [0.0, 0.0, 0.0, 0.0, 0.125, 0.07142857142857142, 0.06060606060606061, 0.12, 0.15, 0.1, 0.17857142857142858, 0.36363636363636365], "reasons": [{"name": "demo_data_fix", "type": null, "counts": [0, 0, 0, 0, 5, 2, 2, 3, 6, 3, 5, 4], "rates": [0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}]}, {"name": "Инфраструктура", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}, {"name": "Аналитика", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}, {"name": "Отчётность", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}]}, {"id": 2, "name": "DEMO-STORE", "counts": [0, 0, 0, 35, 42, 58, 54, 55, 52, 47, 54, 23], "rates": [0.0, 0.0, 0.0, 0.3977272727272727, 0.2692307692307692, 0.35802469135802467, 0.33962264150943394, 0.38461538461538464, 0.2937853107344633, 0.31543624161073824, 0.33540372670807456, 0.35384615384615387], "groups": [{"name": "Операции", "counts": [0, 0, 0, 12, 14, 12, 14, 20, 15, 8, 9, 5], "rates": [0.0, 0.0, 0.0, 0.5454545454545454, 0.5384615384615384, 0.34285714285714286, 0.4827586206896552, 0.5882352941176471, 0.4166666666666667, 0.3076923076923077, 0.3333333333333333, 0.35714285714285715], "reasons": [{"name": "demo_access", "type": null, "counts": [0, 0, 0, 7, 9, 4, 7, 11, 5, 2, 7, 2], "rates": [0.0, 0.0, 0.0, 0.5833333333333334, 0.6428571428571429, 0.3333333333333333, 0.5, 0.55, 0.3333333333333333, 0.25, 0.7777777777777778, 0.4]}, {"name": "demo_integration", "type": null, "counts": [0, 0, 0, 5, 5, 8, 7, 9, 10, 6, 2, 3], "rates": [0.0, 0.0, 0.0, 0.4166666666666667, 0.35714285714285715, 0.6666666666666666, 0.5, 0.45, 0.6666666666666666, 0.75, 0.2222222222222222, 0.6]}]}, {"name": "Продукт", "counts": [0, 0, 0, 4, 10, 17, 10, 8, 15, 8, 12, 5], "rates": [0.0, 0.0, 0.0, 0.18181818181818182, 0.38461538461538464, 0.4857142857142857, 0.3448275862068966, 0.23529411764705882, 0.4166666666666667, 0.3076923076923077, 0.4444444444444444, 0.35714285714285715], "reasons": [{"name": "demo_report", "type": null, "counts": [0, 0, 0, 3, 8, 9, 7, 5, 11, 6, 5, 3], "rates": [0.0, 0.0, 0.0, 0.75, 0.8, 0.5294117647058824, 0.7, 0.625, 0.7333333333333333, 0.75, 0.4166666666666667, 0.6]}, {"name": "demo_ui", "type": null, "counts": [0, 0, 0, 1, 2, 8, 3, 3, 4, 2, 7, 2], "rates": [0.0, 0.0, 0.0, 0.25, 0.2, 0.47058823529411764, 0.3, 0.375, 0.26666666666666666, 0.25, 0.5833333333333334, 0.4]}]}, {"name": "Разработка", "counts": [0, 0, 0, 4, 2, 3, 3, 2, 4, 4, 3, 2], "rates": [0.0, 0.0, 0.0, 0.18181818181818182, 0.07692307692307693, 0.08571428571428572, 0.10344827586206896, 0.058823529411764705, 0.1111111111111111, 0.15384615384615385, 0.1111111111111111, 0.14285714285714285], "reasons": [{"name": "demo_load", "type": null, "counts": [0, 0, 0, 4, 2, 3, 3, 2, 4, 4, 3, 2], "rates": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}]}, {"name": "Поддержка", "counts": [0, 0, 0, 2, 0, 3, 2, 4, 2, 6, 3, 2], "rates": [0.0, 0.0, 0.0, 0.09090909090909091, 0.0, 0.08571428571428572, 0.06896551724137931, 0.11764705882352941, 0.05555555555555555, 0.23076923076923078, 0.1111111111111111, 0.14285714285714285], "reasons": [{"name": "demo_data_fix", "type": null, "counts": [0, 0, 0, 2, 0, 3, 2, 4, 2, 6, 3, 2], "rates": [0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}]}, {"name": "Инфраструктура", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}, {"name": "Аналитика", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}, {"name": "Отчётность", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}]}, {"id": 3, "name": "DEMO-TRANS", "counts": [0, 0, 0, 22, 50, 56, 53, 47, 59, 51, 55, 27], "rates": [0.0, 0.0, 0.0, 0.25, 0.32051282051282054, 0.345679012345679, 0.3333333333333333, 0.32867132867132864, 0.3333333333333333, 0.3422818791946309, 0.3416149068322981, 0.4153846153846154], "groups": [{"name": "Операции", "counts": [0, 0, 0, 8, 19, 11, 11, 12, 12, 6, 11, 7], "rates": [0.0, 0.0, 0.0, 0.5, 0.5135135135135135, 0.34375, 0.3793103448275862, 0.5, 0.41379310344827586, 0.20689655172413793, 0.3548387096774194, 0.4666666666666667], "reasons": [{"name": "demo_access", "type": null, "counts": [0, 0, 0, 5, 10, 8, 3, 5, 5, 4, 6, 3], "rates": [0.0, 0.0, 0.0, 0.625, 0.5263157894736842, 0.7272727272727273, 0.2727272727272727, 0.4166666666666667, 0.4166666666666667, 0.6666666666666666, 0.5454545454545454, 0.42857142857142855]}, {"name": "demo_integration", "type": null, "counts": [0, 0, 0, 3, 9, 3, 8, 7, 7, 2, 5, 4], "rates": [0.0, 0.0, 0.0, 0.375, 0.47368421052631576, 0.2727272727272727, 0.7272727272727273, 0.5833333333333334, 0.5833333333333334, 0.3333333333333333, 0.45454545454545453, 0.5714285714285714]}]}, {"name": "Продукт", "counts": [0, 0, 0, 4, 10, 11, 9, 8, 10, 13, 13, 5], "rates": [0.0, 0.0, 0.0, 0.25, 0.2702702702702703, 0.34375, 0.3103448275862069, 0.3333333333333333, 0.3448275862068966, 0.4482758620689655, 0.41935483870967744, 0.3333333333333333], "reasons": [{"name": "demo_report", "type": null, "counts": [0, 0, 0, 1, 6, 4, 1, 4, 7, 7, 7, 2], "rates": [0.0, 0.0, 0.0, 0.25, 0.6, 0.36363636363636365, 0.1111111111111111, 0.5, 0.7, 0.5384615384615384, 0.5384615384615384, 0.4]}, {"name": "demo_ui", "type": null, "counts": [0, 0, 0, 3, 4, 7, 8, 4, 3, 6, 6, 3], "rates": [0.0, 0.0, 0.0, 0.75, 0.4, 0.6363636363636364, 0.8888888888888888, 0.5, 0.3, 0.46153846153846156, 0.46153846153846156, 0.6]}]}, {"name": "Разработка", "counts": [0, 0, 0, 3, 6, 5, 3, 1, 1, 8, 3, 1], "rates": [0.0, 0.0, 0.0, 0.1875, 0.16216216216216217, 0.15625, 0.10344827586206896, 0.041666666666666664, 0.034482758620689655, 0.27586206896551724, 0.0967741935483871, 0.06666666666666667], "reasons": [{"name": "demo_load", "type": null, "counts": [0, 0, 0, 3, 6, 5, 3, 1, 1, 8, 3, 1], "rates": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}]}, {"name": "Поддержка", "counts": [0, 0, 0, 1, 2, 5, 6, 3, 6, 2, 4, 2], "rates": [0.0, 0.0, 0.0, 0.0625, 0.05405405405405406, 0.15625, 0.20689655172413793, 0.125, 0.20689655172413793, 0.06896551724137931, 0.12903225806451613, 0.13333333333333333], "reasons": [{"name": "demo_data_fix", "type": null, "counts": [0, 0, 0, 1, 2, 5, 6, 3, 6, 2, 4, 2], "rates": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}]}, {"name": "Инфраструктура", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}, {"name": "Аналитика", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}, {"name": "Отчётность", "counts": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "rates": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], "reasons": []}]}], "label_notes": {"demo_access": "Доступ к задачам демо-проекта", "demo_report": "Отчётность демо-проекта"}}
+</script>
+        <script src="js/dashboard-core.js"></script>
+        <script src="js/vendor/jszip.js"></script>
+        <script src="js/dashboard-import.js"></script>
+        <div class="auth-overlay" id="ld-login" hidden="">
+            <div class="panel auth-panel">
+                <h2>Вход</h2>
+                <p>Вход выполняется через корпоративный SSO — учётные данные вводятся на его странице.</p>
+                <a class="download" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="/auth/login">Войти через SSO</a>
+            </div>
+        </div>
+        <div class="auth-overlay" id="ld-settings-panel" hidden="">
+            <div class="panel settings-panel">
+                <div class="settings-head">
+                    <h2>Настройки</h2>
+                    <button class="upload" type="button" id="ld-settings-close"><span>Закрыть</span></button>
+                </div>
+                <div class="settings-body">
+                    <nav class="settings-nav" aria-label="Разделы настроек">
+                        <button type="button" id="ld-tab-products" aria-pressed="false">Настройки проектов</button>
+                        <button type="button" id="ld-tab-groups" aria-pressed="true">Настройки групп</button>
+                        <button type="button" id="ld-tab-sprints" aria-pressed="false">Настройки спринта</button>
+                        <button type="button" id="ld-tab-labels" aria-pressed="false">Настройки меток</button>
+                        <button type="button" id="ld-tab-users" aria-pressed="false">Пользователи</button>
+                    </nav>
+                    <div class="settings-content">
+                        <section class="settings-pane" id="ld-pane-products" aria-label="Настройки проектов" hidden="">
+                            <p class="settings-msg">Проекты синхронизируются с трекером: укажите namespace и код проекта — по ним подтягиваются задачи и метки.</p>
+                            <div class="settings-products-row">
+                                <nav class="products settings-products" id="ld-products-nav" aria-label="Проекты"></nav>
+                            </div>
+                            <div class="panel settings-product-form" id="ld-product-form" hidden="">
+                                <div class="settings-product-form-row">
+                                    <input class="settings-name" id="ld-product-name" placeholder="Название проекта">
+                                    <input class="settings-name" id="ld-product-namespace" placeholder="namespace трекера">
+                                    <input class="settings-name" id="ld-product-code" placeholder="код проекта трекера">
+                                </div>
+                                <div>
+                                    <button class="download" type="button" id="ld-product-save">Сохранить</button>
+                                    <button class="upload" type="button" id="ld-product-cancel"><span>Отмена</span></button>
+                                    <button class="upload" type="button" id="ld-product-delete" hidden=""><span>Удалить проект</span></button>
+                                </div>
+                            </div>
+                        </section>
+                        <section class="settings-pane" id="ld-pane-groups" aria-label="Настройки групп">
+                            <div class="settings-products-row">
+                                <nav class="products settings-products" id="ld-groups-products-nav" aria-label="Проекты"></nav>
+                            </div>
+                            <p class="settings-msg">Обращение попадает в первую (по порядку) группу среди его меток; «причина» — первая метка этой группы. Порядок групп задаётся стрелками.</p>
+                            <div class="settings-groups" id="ld-groups"></div>
+                            <div><button class="upload" type="button" id="ld-add-group"><span>Добавить группу</span></button></div>
+                            <div class="panel" style="padding:12px; display:flex; flex-direction:column; gap:8px">
+                                <p class="settings-sub">Нераспределённые метки <span class="tag" id="ld-unassigned-badge" hidden=""></span></p>
+                                <div class="settings-labels" id="ld-unassigned"></div>
+                            </div>
+                        </section>
+                        <section class="settings-pane" id="ld-pane-sprints" aria-label="Настройки спринта" hidden="">
+                            <p class="settings-msg">Обращения считаются по датам спринтов: день обращения (по МСК) попадает в спринт, в чей диапазон он входит. Границы включительно, диапазоны не должны пересекаться.</p>
+                            <div class="settings-groups" id="ld-sprints"></div>
+                            <div><button class="upload" type="button" id="ld-add-sprint"><span>Добавить спринт</span></button></div>
+                        </section>
+                        <section class="settings-pane" id="ld-pane-labels" aria-label="Настройки меток" hidden="">
+                            <p class="settings-msg">Расшифровка метки показывается на дашборде вместо её имени (например, «ls_trs_12» → «Проблемы с заявками 12 типа (спецзаявки)»). Пустое поле — показывать имя метки как есть. Свободную метку (не входящую ни в одну группу) можно удалить — вернуть её можно в блоке «Удалённые метки» ниже. Метки у каждого проекта свои — переключайте проекты вкладками выше.</p>
+                            <nav class="products settings-products" id="ld-labels-products" aria-label="Проекты"></nav>
+                            <input class="settings-name settings-search" id="ld-labels-search" type="search" placeholder="Поиск метки или расшифровки…" aria-label="Поиск метки">
+                            <div class="settings-groups" id="ld-labels-list"></div>
+                            <div class="settings-groups" id="ld-labels-hidden"></div>
+                        </section>
+                        <section class="settings-pane" id="ld-pane-users" aria-label="Пользователи" hidden="">
+                            <p class="settings-msg">Роль задаёт стартовый набор функций, чекбоксы — точную настройку для каждого пользователя. Свою роль и функции изменить нельзя.</p>
+                            <div class="settings-groups" id="ld-users-list"></div>
+                            <div><button class="upload" type="button" id="ld-add-user"><span>Добавить пользователя</span></button></div>
+                            <div id="ld-user-card"></div>
+                        </section>
+                    </div>
+                </div>
+                <div class="settings-actions">
+                    <button class="upload" type="button" id="ld-labels-reload"><span>Обновить</span></button>
+                    <button class="download" type="button" id="ld-settings-save">Сохранить</button>
+                </div>
+                <p class="settings-msg" id="ld-settings-msg"></p>
+            </div>
+        </div>
+        <script src="js/demo-data.js"></script>
+<script src="js/demo-api.js"></script>
+<script src="js/dashboard-app.js"></script>
+    </body>
+</html>

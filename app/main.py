@@ -1,7 +1,8 @@
-"""FastAPI-приложение «Аналитики L2»: API, статика, сессии, фоновая синхронизация.
+"""FastAPI-приложение «Аналитика L2»: API, статика, сессии, фоновая синхронизация.
 
-Архитектура — план, раздел 2: бэкенд отдаёт /api/data ровно в формате ld-source-data,
-фронт вызывает уже существующий window.L2Dashboard.replaceData(...).
+Бэкенд отдаёт /api/data ровно в формате ld-source-data, фронт вызывает
+window.L2Dashboard.replaceData(...). Демо-режим (DEMO_MODE=1) наполняет кэш
+синтетическими задачами и позволяет входить без трекера и Keycloak.
 """
 from __future__ import annotations
 
@@ -19,7 +20,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session as DbSession
 
-from . import aggregator, auth, db, keycloak, sync_service
+from . import aggregator, auth, db, demo_data, keycloak, sync_service
 from .config import Settings, load_settings
 from .db import UserSession
 from .scheduler import start_background_sync
@@ -92,7 +93,7 @@ class UserUpdateIn(BaseModel):
 
 
 def _is_stale(state) -> bool:
-    """Свежесть кэша: неудачная синхронизация позже последней успешной (план, п. 5.6)."""
+    """Свежесть кэша: неудачная синхронизация позже последней успешной."""
     if state.last_error_at is None:
         return False
     return state.last_success_at is None or state.last_error_at > state.last_success_at
@@ -120,17 +121,15 @@ def _sprint_spec(sprint: SprintIn) -> dict[str, Any]:
 def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or load_settings()
     engine = db.create_engine(settings.database_url)
-    # SPL — продукт из настроек (.env); WMS и Trans — проекты ботов из db.DEFAULT_PRODUCTS
-    # (коды чтения задач — из команд otchet ботов: WMS/services/otchet.py, trans/services/otchet.py).
-    bot_products = [spec for spec in db.DEFAULT_PRODUCTS if spec["name"] != "SPL"]
+    # Первый продукт — из настроек (.env); остальные — демо-продукты из db.DEFAULT_PRODUCTS.
+    bot_products = [spec for spec in db.DEFAULT_PRODUCTS if spec["name"] != "DEMO"]
     db.init_db(engine, default_products=[
-        {"name": "SPL", "namespace": settings.tracker_namespace, "project_code": settings.tracker_project},
+        {"name": "DEMO", "namespace": settings.tracker_namespace, "project_code": settings.tracker_project},
         *bot_products,
     ])
     db.init_db(engine)
-    # Первый старт: админы из .env/Vault переезжают в базу, дальше ими управляет
-    # вкладка «Пользователи»; прочие пользователи создаются при первом входе
-    # через Keycloak (provision_oidc_user).
+    # Первый старт: админы из .env переезжают в базу, дальше ими управляет вкладка
+    # «Пользователи»; прочие пользователи создаются при первом входе (provision_oidc_user).
     db.seed_admins(engine, settings.admins)
     # Пользователям старых версий добавляются новые функции (period, users)
     db.upgrade_user_permissions(engine)
@@ -238,7 +237,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         date_from: date | None = Query(default=None),
         date_to: date | None = Query(default=None),
     ) -> dict[str, Any]:
-        """Агрегат кэша трекера в формате ld-source-data (план, раздел 4).
+        """Агрегат кэша трекера в формате ld-source-data.
 
         Спринты из настроек перекрывают недельное окно: параметр weeks действует,
         только пока спринты не заданы. Пользовательский диапазон date_from/date_to
@@ -272,7 +271,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             **db.load_label_notes(db_session),
         }
         return {
-            "source": "wb-tracker",
+            "source": "demo-tracker",
             "generated_at": datetime.now(timezone.utc).isoformat(),
             "stale": _is_stale(db.get_sync_state(db_session)),
             "data": dashboard_data,
@@ -424,7 +423,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         db_session: DbSession = Depends(get_db),
         _user: UserSession = Depends(require_permission("users")),
     ) -> dict[str, Any]:
-        """Создание пользователя (вход он выполняет своим Keycloak-логином);
+        """Создание пользователя (вход он выполняет своим SSO-логином);
         роль задаёт стартовый набор функций."""
         try:
             db.create_user(db_session, payload.model_dump())
@@ -538,16 +537,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.get("/auth/login", include_in_schema=False)
     def login_redirect(request: Request, db_session: DbSession = Depends(get_db)):
-        """Вход: живая сессия — на дашборд, иначе редирект на страницу входа Keycloak."""
+        """Вход: живая сессия — на дашборд, иначе редирект на страницу входа SSO."""
         if auth.get_session(request.cookies, db_session):
             return RedirectResponse("/", status_code=SESSION_PAGE_REDIRECT)
         if not keycloak.is_configured(settings):
-            raise HTTPException(status_code=503, detail="Вход не настроен: заполните KEYCLOAK_* в .env или Vault")
+            raise HTTPException(status_code=503, detail="Вход не настроен: заполните KEYCLOAK_* в .env")
         challenge = keycloak.new_login_challenge()
         try:
             authorize_url = keycloak.authorization_url(settings, challenge)
         except keycloak.KeycloakError as keycloak_error:
-            logger.warning("Keycloak недоступен при входе: %s", keycloak_error)
+            logger.warning("SSO недоступен при входе: %s", keycloak_error)
             return login_error_page(str(keycloak_error), 502)
         response = RedirectResponse(authorize_url, status_code=LOGIN_REDIRECT_STATUS)
         # state/nonce/verifier едут в подписанном cookie: callback сверит подпись и state
@@ -571,28 +570,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         error: str = Query(default=""),
         error_description: str = Query(default=""),
     ):
-        """Ответ Keycloak: код обменивается на токены, создаётся серверная сессия.
+        """Ответ SSO: код обменивается на токены, создаётся серверная сессия.
 
         Провижининг пользователя (db.provision_oidc_user) и новая сессия уходят
         одним commit'ом внутри create_session.
         """
         if error:
-            return login_error_page(error_description or f"Keycloak вернул ошибку: {error}", 401)
+            return login_error_page(error_description or f"SSO вернул ошибку: {error}", 401)
         challenge = keycloak.unpack_state_cookie(settings, request.cookies.get(keycloak.OIDC_STATE_COOKIE))
         if challenge is None or not secrets.compare_digest(challenge["state"], state):
             return login_error_page("Сессия входа устарела или повреждена — попробуйте войти снова.", 401)
         if not code:
-            return login_error_page("Keycloak не вернул код авторизации.", 401)
+            return login_error_page("SSO не вернул код авторизации.", 401)
         try:
             claims = keycloak.exchange_code(settings, code, challenge["verifier"], challenge["nonce"])
         except keycloak.KeycloakError as keycloak_error:
-            logger.warning("Вход через Keycloak не удался: %s", keycloak_error)
+            logger.warning("Вход через SSO не удался: %s", keycloak_error)
             return login_error_page(str(keycloak_error), 502)
         site_user = db.provision_oidc_user(db_session, claims, settings.admins)
         # истёкшие сессии уйдут тем же commit, что и новая (внутри create_session)
         auth.purge_expired_sessions(db_session)
         token = auth.create_session(db_session, site_user, settings.session_ttl_hours)
-        logger.info("Вход через Keycloak: %s", site_user.username)
+        logger.info("Вход через SSO: %s", site_user.username)
         response = RedirectResponse("/", status_code=SESSION_PAGE_REDIRECT)
         response.delete_cookie(keycloak.OIDC_STATE_COOKIE, path="/")
         auth.set_session_cookie(response, token, settings)
@@ -600,7 +599,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @app.post("/auth/logout", include_in_schema=False)
     def logout(db_session: DbSession = Depends(get_db), user: UserSession = Depends(current_user)):
-        """Локальный выход (сессия и cookie) + адрес выхода из Keycloak, если он объявлен."""
+        """Локальный выход (сессия и cookie) + адрес выхода из SSO, если он объявлен."""
         db_session.delete(user)
         db_session.commit()
         response = JSONResponse({"ok": True, "logout_url": keycloak.end_session_url(settings)})

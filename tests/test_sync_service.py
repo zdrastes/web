@@ -54,7 +54,7 @@ def test_perform_sync_fills_cache_per_product(tmp_path):
         products = {p["name"]: p["id"] for p in db.load_products(session)}
 
     def make_client(product):
-        return FakeClient({"SPL": [issue("SPL-1", "первая")], "WMS": [issue("WMS-1", "своя")]}, product)
+        return FakeClient({"WMS": [issue("WMS-1", "первая")], "Trans": [issue("Trans-1", "своя")]}, product)
 
     result = perform_sync(FakeSettings(), factory, make_client)
     assert result["fetched"] == 2
@@ -62,8 +62,8 @@ def test_perform_sync_fills_cache_per_product(tmp_path):
 
     with factory() as session:
         rows = {(row.product_id, row.key) for row in session.query(db.IssueCache).all()}
-        assert (products["SPL"], "SPL-1") in rows
         assert (products["WMS"], "WMS-1") in rows
+        assert (products["Trans"], "Trans-1") in rows
     engine.dispose()
 
 

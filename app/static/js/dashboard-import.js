@@ -1,6 +1,6 @@
 ( () => {
     'use strict';
-    const root = document.getElementById('logistics-l2-dashboard');
+    const root = document.getElementById('analytics-l2-dashboard');
     const upload = root.querySelector('#ld-upload')
       , input = root.querySelector('#ld-file')
       , message = root.querySelector('#ld-import-message');

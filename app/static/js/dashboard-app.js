@@ -128,12 +128,12 @@
             const payload = await api('/api/data' + reportRangeQuery());
             const data = payload.data || {};
             if (Array.isArray(data.products) && data.products.length && Array.isArray(data.weeks) && data.weeks.length) {
-                dashboard.replaceData(data, 'WB Tracker', null, { customPeriod: Boolean(state.reportRange) });
+                dashboard.replaceData(data, 'трекер', null, { customPeriod: Boolean(state.reportRange) });
                 noteSync(payload.stale ? 'кэш от ' + formatDate(payload.generated_at) : '');
                 reportData(
                     payload.stale
                         ? 'Трекер недоступен: показан кэш от ' + formatDate(payload.generated_at) + '.'
-                        : 'Данные WB Tracker · синхронизация ' + formatDate(payload.generated_at) + '.',
+                        : 'Данные трекера · синхронизация ' + formatDate(payload.generated_at) + '.',
                     Boolean(payload.stale)
                 );
             } else {
@@ -149,7 +149,7 @@
     }
 
     logoutButton.addEventListener('click', async () => {
-        // Полный выход: сначала локальная сессия, затем — страница выхода Keycloak,
+        // Полный выход: сначала локальная сессия, затем — страница выхода SSO,
         // чтобы SSO не впускал обратно без повторного ввода пароля.
         let target = '/';
         try {
@@ -652,7 +652,7 @@
 
         if (user.isNew) {
             const loginLabel = el('label', 'settings-user-field');
-            loginLabel.append('Логин (логин Keycloak)');
+            loginLabel.append('Логин (SSO)');
             const loginInput = el('input', 'settings-name');
             loginInput.value = user.username || '';
             loginInput.addEventListener('input', () => { user.username = loginInput.value; });
