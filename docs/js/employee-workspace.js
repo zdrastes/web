@@ -396,6 +396,19 @@
   function noticesForPerson() {
     const person = view.person;
     const notices = [];
+    const assignments = window.L2TaskAssignments;
+    if (assignments) {
+      const pending = assignments.pendingToday(person);
+      if (pending.length) {
+        const assigned = assignments.assignedToday(person);
+        notices.push({
+          id: [person, 'daily-tasks', assignments.todayKey(), ...assigned.map(task => task.id)].join('/'),
+          title: 'Вам назначены задачи на сегодня',
+          detail: 'Открыть мои задачи →',
+          href: assignments.todayLink(person),
+        });
+      }
+    }
     for (const request of data.requests) {
       const incoming = request.to === person;
       if (!incoming && request.from !== person) continue;
@@ -449,12 +462,14 @@
     readButton.disabled = !unread;
     $('notice-list').replaceChildren(...notices.map(item => {
       const row = element('li');
-      const button = element('button', read.has(item.id) ? 'notice' : 'notice unread');
-      button.type = 'button';
+      const button = element(item.href ? 'a' : 'button', read.has(item.id) ? 'notice' : 'notice unread');
+      if (item.href) button.href = item.href;
+      else button.type = 'button';
       button.append(element('strong', '', item.title), element('small', '', item.detail));
       button.addEventListener('click', () => {
         markRead([item.id]);
         toggleNotices(false);
+        if (item.href) return;
         bell.focus();
         item.open();
       });
@@ -462,7 +477,17 @@
       return row;
     }));
   }
-  bell.addEventListener('click', () => toggleNotices(panel.hidden));
+  bell.addEventListener('click', () => {
+    if (panel.hidden) renderNotices();
+    toggleNotices(panel.hidden);
+  });
+  window.addEventListener('pageshow', renderNotices);
+  window.addEventListener('storage', event => {
+    const assignments = window.L2TaskAssignments;
+    if (assignments && [assignments.dailyActionKey, assignments.projectStatusKey].includes(event.key)) {
+      renderNotices();
+    }
+  });
   readButton.addEventListener('click', () => {
     markRead(noticesForPerson().map(item => item.id));
     bell.focus();
