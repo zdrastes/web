@@ -117,13 +117,21 @@ dialog::backdrop{background:#36415955}
 #notice-list{list-style:none;margin:0;padding:0;max-height:55vh;overflow:auto;display:grid;gap:6px}
 .notice{width:100%;display:grid;gap:4px;text-align:left;overflow-wrap:anywhere}.notice.unread{background:#ebe4fa;box-shadow:inset 3px 0 #8061bf}
 .notice small{color:#535d6d;font-weight:400}
+#help-button{display:grid;place-items:center;width:42px;height:42px;padding:0;font-size:19px;color:#514284}
+#workspace-help{width:min(560px,calc(100% - 32px));max-height:84dvh;overflow:auto}
+.help-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.help-topics{display:grid;gap:8px;margin:14px 0}
+.help-topics details{background:#F3F5F8;border-radius:12px;padding:12px}
+.help-topics summary{cursor:pointer;font-weight:600}
+.help-topics p{margin:9px 0;color:#535d6d;line-height:1.5}
+.help-topics button{background:#e9e4f7;color:#473780}
 </style>
 </head>
 <body>
   <header class="shell">
     <a class="logo" href="./"><span class="mark">L2</span> Портал L2</a>
     <div class="notices">
-      <span class="top-note">Демо-версия</span>
+      <button id="help-button" type="button" commandfor="workspace-help" command="show-modal" aria-label="Помощь" aria-haspopup="dialog" title="Помощь">?</button>
       <button id="bell" type="button" aria-label="Уведомления" aria-controls="notice-panel" aria-expanded="false">
         <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 6-3 7-3 9h18c0-2-3-3-3-9M10 21h4"/></svg>
         <span id="bell-count" aria-hidden="true" hidden></span>
@@ -235,6 +243,39 @@ dialog::backdrop{background:#36415955}
       </div>
     </form>
   </dialog>
-<script src="js/employee-workspace.js?v=1"></script>
+<dialog id="workspace-help" aria-labelledby="help-title">
+    <div class="help-head">
+      <h2 id="help-title">Помощь</h2>
+      <form method="dialog"><button type="submit" autofocus>Закрыть</button></form>
+    </div>
+    <div class="help-topics">
+      <details>
+        <summary>Как добавить отпуск</summary>
+        <p>Откройте «Отпуска» и нажмите «Добавить отпуск». Выберите сотрудника, первый и последний день, затем сохраните. Чтобы изменить даты, нажмите «Изменить» рядом с отпуском.</p>
+        <button type="button" data-help-section="vacation">Открыть отпуска ↗</button>
+      </details>
+      <details>
+        <summary>Как попросить коллегу подменить</summary>
+        <p>В «Моём графике» нажмите на свою смену. Выберите коллегу в поле «Кто работает или подменит» и сохраните. В графике появится отметка об ожидании. До подтверждения исходная смена остаётся в графике. В демо можно отменить заявку, а подтверждение пока недоступно.</p>
+        <button type="button" data-help-section="personal">Открыть мой график ↗</button>
+      </details>
+      <details>
+        <summary>Как посмотреть график команды</summary>
+        <p>В «Графике команды» выберите неделю стрелками или через поле «К дате». Фильтр «Сотрудник» покажет расписание одного коллеги.</p>
+        <button type="button" data-help-section="team">Открыть график команды ↗</button>
+      </details>
+      <details>
+        <summary>Как назначить отчёт</summary>
+        <p>В разделе «Отчёты» нажмите «Добавить отчёт», укажите название, ответственного и дату сдачи. Ближайший назначенный отчёт появится на главном экране сотрудника.</p>
+        <button type="button" data-help-section="report">Открыть отчёты ↗</button>
+      </details>
+      <details>
+        <summary>Где посмотреть уведомления</summary>
+        <p>Нажмите на колокольчик справа. Там есть напоминания о демовстречах, сроки отчётов и заявки на подмену. Нажмите на уведомление, чтобы открыть соответствующую запись.</p>
+      </details>
+    </div>
+    <p class="legend">Это демо. Изменения сохраняются в текущем браузере.</p>
+  </dialog>
+  <script src="js/employee-workspace.js?v=2"></script>
 </body>
 </html>
