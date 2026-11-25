@@ -82,7 +82,7 @@ def test_data_has_dashboard_format_with_seeded_groups(client):
     assert len(data["weeks"]) == 6
     names = [product["name"] for product in data["products"]]
     # кэш пуст: итоги считаются по всем задачам каждого продукта — пока нули
-    assert names == ["DEMO", "WMS", "Trans"]
+    assert names == ["DEMO", "DEMO-STORE", "DEMO-TRANS"]
     assert all(product["counts"] == [0] * 6 for product in data["products"])
     # дефолтные группы (Операции, Продукт, …) принадлежат первому продукту
     assert [group["name"] for group in data["products"][0]["groups"]] == [
@@ -122,7 +122,7 @@ def test_settings_put_replaces_groups_atomically(client):
 
     data = client.get("/api/data").json()["data"]
     # продукты не меняются от замены групп; группа без product_id попадает в первый продукт
-    assert [product["name"] for product in data["products"]] == ["DEMO", "WMS", "Trans"]
+    assert [product["name"] for product in data["products"]] == ["DEMO", "DEMO-STORE", "DEMO-TRANS"]
     assert [group["name"] for group in data["products"][0]["groups"]] == ["Первый контур"]
     assert all(product["groups"] == [] for product in data["products"][1:])
 
@@ -488,7 +488,7 @@ def test_products_crud_round_trip(client):
     """Продукт создаётся, обновляется и удаляется; последний продукт удалить нельзя."""
     login(client)
     seeded = client.get("/api/products").json()["products"]
-    assert [p["name"] for p in seeded] == ["DEMO", "WMS", "Trans"]
+    assert [p["name"] for p in seeded] == ["DEMO", "DEMO-STORE", "DEMO-TRANS"]
 
     created = client.post("/api/products", json={"name": "Demo", "namespace": "ns", "project_code": "Demo"})
     assert created.status_code == 200, created.text
@@ -501,7 +501,7 @@ def test_products_crud_round_trip(client):
 
     deleted = client.delete(f"/api/products/{fms['id']}")
     assert deleted.status_code == 200
-    assert [p["name"] for p in deleted.json()["products"]] == ["DEMO", "WMS", "Trans"]
+    assert [p["name"] for p in deleted.json()["products"]] == ["DEMO", "DEMO-STORE", "DEMO-TRANS"]
 
     # единственный продукт удалить нельзя (после удаления двух останется один)
     ids = [p["id"] for p in client.get("/api/products").json()["products"]]

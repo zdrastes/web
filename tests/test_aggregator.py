@@ -8,7 +8,7 @@ UTC = timezone.utc
 
 PRODUCTS = [
     {"id": 1, "name": "DEMO", "sort_order": 0},
-    {"id": 2, "name": "WMS", "sort_order": 1},
+    {"id": 2, "name": "DEMO-STORE", "sort_order": 1},
 ]
 
 GROUPS = [
@@ -28,7 +28,7 @@ GROUPS = [
         "labels": [{"label": "demo_label_3", "sort_order": 0}],
     },
     {
-        "name": "WMS-группа",
+        "name": "DEMO-STORE-группа",
         "sort_order": 2,
         "product_id": 2,
         "labels": [{"label": "demo_label_4", "sort_order": 0}],
@@ -115,7 +115,7 @@ def test_reason_is_first_label_of_group_by_order():
 
 
 def test_labels_of_other_product_do_not_leak():
-    """Метки WMS не попадают в группы DEMO и наоборот."""
+    """Метки DEMO-STORE не попадают в группы DEMO и наоборот."""
     data = aggregate(
         [
             issue(12, labels=["demo_label_4"], product_id=1),
@@ -127,14 +127,14 @@ def test_labels_of_other_product_do_not_leak():
         today=date(2026, 11, 15),
     )
     assert group(data, "Операции")["counts"] == [0]
-    assert group(data, "WMS-группа")["counts"] == [0]
+    assert group(data, "DEMO-STORE-группа")["counts"] == [0]
 
 
 def test_same_label_in_different_products_counts_separately():
     """Одинаковые метки у разных продуктов считаются в группах своего продукта."""
     groups = [
         {"name": "DEMO-группа", "sort_order": 0, "product_id": 1, "labels": [{"label": "общая", "sort_order": 0}]},
-        {"name": "WMS-группа", "sort_order": 1, "product_id": 2, "labels": [{"label": "общая", "sort_order": 0}]},
+        {"name": "DEMO-STORE-группа", "sort_order": 1, "product_id": 2, "labels": [{"label": "общая", "sort_order": 0}]},
     ]
     data = aggregate(
         [
@@ -147,7 +147,7 @@ def test_same_label_in_different_products_counts_separately():
         today=date(2026, 11, 15),
     )
     assert group(data, "DEMO-группа")["counts"] == [1]
-    assert group(data, "WMS-группа")["counts"] == [1]
+    assert group(data, "DEMO-STORE-группа")["counts"] == [1]
 
 
 def test_rates_are_share_of_groups_within_product():
@@ -247,7 +247,7 @@ def test_custom_range_without_sprints_keeps_iso_default_weeks():
 def test_project_without_groups_has_no_groups():
     """У проекта без своих групп список групп пуст — чужие группы не подтягиваются."""
     only_product = [{"id": 1, "name": "DEMO", "sort_order": 0}]
-    other_groups = [GROUPS[2]]  # WMS-группа принадлежит продукту 2
+    other_groups = [GROUPS[2]]  # DEMO-STORE-группа принадлежит продукту 2
     data = aggregate([issue(12, labels=["demo_label_1"])], only_product, other_groups, 1, today=date(2026, 11, 15))
     assert project(data, "DEMO")["counts"] == [1]
     assert project(data, "DEMO")["groups"] == []

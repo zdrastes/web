@@ -143,17 +143,17 @@ def test_extract_labels_direct_field_wins():
 
 # Коды и имена полей меток — настраиваются в конфигурации трекера:
 # у демо-продуктов поля меток ищутся по id и по имени.
-WMS_LABELS_FIELD_ID = "00000000-0000-0000-0000-000000000002"
-WMS_WH_LABELS_FIELD_ID = "00000000-0000-0000-0000-000000000003"
+DEMO_STORE_LABELS_FIELD_ID = "00000000-0000-0000-0000-000000000002"
+DEMO_STORE_WH_LABELS_FIELD_ID = "00000000-0000-0000-0000-000000000003"
 
 
 def test_extract_labels_wms_fields_by_id():
-    """WMS: метки собираются из обоих полей — «Метки» и «Метки склада»."""
+    """DEMO-STORE: метки собираются из обоих полей — «Метки» и «Метки склада»."""
     raw = {
-        "id": "WMS-1",
+        "id": "DEMO-STORE-1",
         "fields": [
-            {"id": WMS_LABELS_FIELD_ID, "name": "Метки", "value": [{"id": "x1", "label": "Пункт выдачи"}]},
-            {"id": WMS_WH_LABELS_FIELD_ID, "name": "Метки склада", "value": [{"id": "x2", "label": "Демо-склад"}]},
+            {"id": DEMO_STORE_LABELS_FIELD_ID, "name": "Метки", "value": [{"id": "x1", "label": "Пункт выдачи"}]},
+            {"id": DEMO_STORE_WH_LABELS_FIELD_ID, "name": "Метки склада", "value": [{"id": "x2", "label": "Демо-склад"}]},
             {"id": "11111111-1111-1111-1111-111111111111", "name": "Priority", "value": [{"label": "Средний"}]},
         ],
     }
@@ -161,7 +161,7 @@ def test_extract_labels_wms_fields_by_id():
 
 
 def test_extract_labels_trans_field_by_name():
-    """Trans: поле меток ищется по имени «Label New» — id заранее не известен."""
+    """DEMO-TRANS: поле меток ищется по имени «Label New» — id заранее не известен."""
     raw = {
         "id": "LTS-7",
         "fields": [
@@ -175,8 +175,8 @@ def test_extract_labels_trans_field_by_name():
 def test_extract_labels_merges_and_dedupes_fields():
     raw = {
         "fields": [
-            {"id": WMS_LABELS_FIELD_ID, "value": [{"label": "Пункт выдачи"}]},
-            {"id": WMS_WH_LABELS_FIELD_ID, "value": [{"label": "Пункт выдачи"}, {"label": "Демо-сортировка"}]},
+            {"id": DEMO_STORE_LABELS_FIELD_ID, "value": [{"label": "Пункт выдачи"}]},
+            {"id": DEMO_STORE_WH_LABELS_FIELD_ID, "value": [{"label": "Пункт выдачи"}, {"label": "Демо-сортировка"}]},
         ],
     }
     assert extract_labels(raw) == ["Пункт выдачи", "Демо-сортировка"]
@@ -184,7 +184,7 @@ def test_extract_labels_merges_and_dedupes_fields():
 
 def test_extract_labels_from_dict_fields():
     """Словарная форма полей {field_id: value}, которую может отдавать API трекера."""
-    raw = {"key": "WMS-2", "fields": {WMS_LABELS_FIELD_ID: [{"label": "Пункт выдачи"}]}}
+    raw = {"key": "DEMO-STORE-2", "fields": {DEMO_STORE_LABELS_FIELD_ID: [{"label": "Пункт выдачи"}]}}
     assert extract_labels(raw) == ["Пункт выдачи"]
 
 

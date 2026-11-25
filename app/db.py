@@ -39,15 +39,15 @@ DEFAULT_LABEL_NOTES = {
 # настраиваются в .env (TRACKER_NAMESPACE / TRACKER_PROJECT).
 DEFAULT_PRODUCTS = (
     {"name": "DEMO", "namespace": "demo-namespace", "project_code": "DEMO"},
-    {"name": "WMS", "namespace": "demo-namespace", "project_code": "DEMO-WMS"},
-    {"name": "Trans", "namespace": "demo-namespace", "project_code": "DEMO-LTS"},
+    {"name": "DEMO-STORE", "namespace": "demo-namespace", "project_code": "DEMO-STORE"},
+    {"name": "DEMO-TRANS", "namespace": "demo-namespace", "project_code": "DEMO-TRANS"},
 )
 
 # В ранних версиях в стартовые продукты попадали alias'ы создания задач — по ним
 # выборка задач не возвращает ничего (см. fix_legacy_product_codes).
 LEGACY_PRODUCT_CODES = {
-    ("legacy-namespace", "legacy-wms"): ("demo-namespace", "DEMO-WMS"),
-    ("legacy-namespace", "legacy-lts"): ("demo-namespace", "DEMO-LTS"),
+    ("legacy-namespace", "legacy-store"): ("demo-namespace", "DEMO-STORE"),
+    ("legacy-namespace", "legacy-trans"): ("demo-namespace", "DEMO-TRANS"),
 }
 
 # Функции, выдаваемые пользователю чекбоксами в карточке (вкладка «Пользователи»);
