@@ -102,9 +102,9 @@
   
 #portal-profile-controls{position:relative;display:flex;gap:8px;align-items:center;justify-content:flex-end}
 #portal-profile-controls[hidden],#portal-profile-panel[hidden],#tasks-signin[hidden],#tasks-workspace[hidden]{display:none!important}
-#portal-profile-controls button,#portal-help button,#tasks-login{cursor:pointer;border:0;border-radius:12px;background:#F0F2F5;color:#4e3684;font:inherit;font-weight:650;padding:8px 12px}
-#portal-profile-controls button:hover,#portal-help button:hover,#tasks-login:hover{background:#e9e2f8}
-#portal-profile-controls button:focus-visible,#portal-help button:focus-visible,#tasks-login:focus-visible{outline:2px solid #765bb6;outline-offset:2px}
+#portal-profile-controls button,#portal-help button{cursor:pointer;border:0;border-radius:12px;background:#F0F2F5;color:#4e3684;font:inherit;font-weight:650;padding:8px 12px}
+#portal-profile-controls button:hover,#portal-help button:hover:hover{background:#e9e2f8}
+#portal-profile-controls button:focus-visible,#portal-help button:focus-visible:focus-visible{outline:2px solid #765bb6;outline-offset:2px}
 #portal-help-button,#portal-profile-button{width:40px;height:40px}
 #portal-profile-controls #portal-profile-button{border-radius:50%;background:#ebe4fa;padding:0}
 #portal-profile-panel{position:absolute;right:0;top:calc(100% + 9px);z-index:10;width:min(275px,calc(100vw - 30px));padding:14px;background:#fff;border:1px solid #e6eaf0;border-radius:18px;box-shadow:0 2px 12px #1018280c;color:#1C1E21}
@@ -123,7 +123,7 @@
 
 #ld-user,#ld-logout{display:none!important}
 </style>
-  <link rel="stylesheet" href="css/portal-signin.css">
+  <link rel="stylesheet" href="css/portal-signin.css?v=2">
 </head>
 <body>
   <header class="shell"><a href="./"><span class="mark">L2</span> Портал L2</a><div id="portal-profile-controls" hidden>
